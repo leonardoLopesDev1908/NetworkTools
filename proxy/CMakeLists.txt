@@ -17,4 +17,4 @@ endif()
 
 target_include_directories(Proxy PUBLIC ${PROXY_INCLUDE_DIR})
 
-target_link_directories(Proxy PRIVATE Message)
+target_link_libraries(Proxy PRIVATE CHandler)

@@ -80,6 +80,5 @@ private:
     std::shared_ptr<ProxyLinux> m_proxy;
 #endif
 
-    bool proxyRunning = false;
     std::thread proxyThread;
 };

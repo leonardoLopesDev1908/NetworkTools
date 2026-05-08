@@ -1,9 +1,17 @@
 #ifndef MESSAGE_H
-#define MESSAGE_G
+#define MESSAGE_H
 
 #include <iostream>
 #include <unordered_map>
 #include <variant>
+
+//According with RFC 7230 https://datatracker.ietf.org/doc/html/rfc7230#section-3.1.1
+/*
+   "An HTTP message can be either a request from client to server or a
+   response from server to client.  Syntactically, the two types of
+   message differ only in the start-line, which is either a request-line
+   (for requests) or a status-line (for responses)."
+*/
 
 enum class Direction {Inbound, Outbound};
 
@@ -28,7 +36,7 @@ struct Message
     std::unordered_map<std::string, std::string> headers;
     std::string body;
 
-    bool isRequest()
+    bool isRequest() const
     {
         return std::holds_alternative<RequestLine>(startLine);
     }

@@ -1,12 +1,5 @@
 #include "ProxyLinux.h"
 
-ProxyLinux::ProxyLinux(std::string host, std::string port)
-    : m_host(host), m_port(port) 
-{
-    create();
-}
-
-
 int ProxyLinux::create()
 {
     m_socket = socket(AF_INET, SOCK_STREAM, 0);    

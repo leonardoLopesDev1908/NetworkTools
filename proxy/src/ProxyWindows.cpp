@@ -79,18 +79,42 @@ int ProxyWindows::start()
 		return 1;
 	}
 
-	SOCKET client = INVALID_SOCKET;
-	if ((client = accept(client, NULL, NULL)) == INVALID_SOCKET)
+	proxyRun = true;
+
+	while (proxyRun)
 	{
-		std::cout << "[Error] accepting\n";
-		closesocket(m_socket);
-		WSACleanup();
-		return 1;
+		SOCKET client = INVALID_SOCKET;
+		if ((client = accept(client, NULL, NULL)) == INVALID_SOCKET)
+		{
+			std::cout << "[Error] accepting\n";
+			closesocket(m_socket);
+			WSACleanup();
+			return 1;
+		}
+
+		if (keepMessage)
+		{
+			//asynchronous launch to edit message
+			// 
+			//ConnectionHandler newConn(client); 
+		}
+		else
+		{
+			//just keep at 
+		}
+
 	}
-
-	//ConnectionHandler newConn(clientSocket); 
-
-	//Como criar o connectionHandler? Dar clientSocket pra ele apenas? Dar addrinfo?
-
 	return 0;
+}
+
+void ProxyWindows::keep()
+{
+	keepMessage = (keepMessage == false) ? true : false;
+}
+
+void ProxyWindows::stop()
+{
+	proxyRun = false;
+	closesocket(m_socket);
+	WSACleanup();
 }

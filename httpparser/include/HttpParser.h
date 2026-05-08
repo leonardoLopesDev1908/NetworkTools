@@ -29,11 +29,13 @@ public:
 
 private:
     std::string getFirstLine(std::string& raw);
-    void parseHeaders(
+
+    size_t parseHeaders(
         std::string& raw, 
         size_t start,
         std::unordered_map<std::string, std::string>& headers);
-    std::string parseBody(std::string& raw);
+
+    std::string parseBody(std::string & raw, size_t start, std::string len);
 };
 
 

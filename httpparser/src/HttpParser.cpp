@@ -3,6 +3,7 @@
 
 #include "HttpParser.h"
 #include <stdlib.h>
+#include <string>
 
 Message HttpParser::parse(std::string& raw, Direction direction)
 {
@@ -26,14 +27,23 @@ Message HttpParser::parse(std::string& raw, Direction direction)
         msg.startLine = rl;
     }
 
-    parseHeaders(raw, firstLine.size(), msg.headers);
-    //if(msg.headers["Content-Length"] > 0)
-    //   msg.body = parseBody(raw);
+    size_t endHeaders = parseHeaders(raw, firstLine.size(), msg.headers);
 
+    try {
+        if (msg.headers.contains("Content-Length") &&
+            stoi(msg.headers["Content-Length"]) > 0)
+        {
+            parseBody(raw, endHeaders, msg.headers["Content-Length"]);
+        }
+    }
+    catch (std::invalid_argument& e)
+    {
+        std::cout << "Invalid argument: " << e.what() << "\n";
+    }
     return msg;
 }
 
-std::string getFirstLine(std::string& raw)
+std::string HttpParser::getFirstLine(std::string& raw)
 {
     size_t end = raw.find("\r\n");
     std::string firstLine (raw.begin(), raw.begin() + end); 
@@ -41,31 +51,38 @@ std::string getFirstLine(std::string& raw)
     return firstLine;
 }
 
-void HttpParser::parseHeaders(std::string& raw, size_t start, 
+size_t HttpParser::parseHeaders(std::string& raw, size_t start, 
         std::unordered_map<std::string, std::string>& headers)
 {
     size_t end;
-
+     
     while(true)
     {
-        end = raw.find("\r\n");
-        std::string line = raw.substr(start, end);
+        end = raw.find("\r\n", start);
+        std::string line = raw.substr(start, end - start);
         
-        if(line == "\r\n")
+        if(line == "") //end of headers
             break;
         
         size_t endKey = line.find(":");
         headers.insert({
-            line.substr(start, endKey), line.substr(endKey, end)
+            line.substr(0, endKey), 
+            line.substr(endKey + 1, line.size() - endKey - 1)
         });
 
-        start = end + 4;
+        start = end + 2;
     }   
+    return end;
 }
 
-std::string HttpParser::parseBody(std::string& raw)
+std::string HttpParser::parseBody(std::string& raw, size_t start, std::string len)
 {
+    size_t size;
+    sscanf(len.c_str(), "%zu", &size);
+    
+    std::string body(raw.data(), start, size);
 
+    return body;
 }
 
 #endif

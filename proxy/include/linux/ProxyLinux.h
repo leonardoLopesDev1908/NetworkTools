@@ -22,7 +22,10 @@ public:
     int create();
     int start();
     void stop();
+
 private:
+
     struct addrinfo hints, * result = nullptr;
+    bool proxyRun = false;
 };
 #endif

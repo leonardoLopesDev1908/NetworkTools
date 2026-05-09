@@ -1,13 +1,10 @@
 #ifndef CHANDLER_LINUX_H
 #define CHANDLER_LINUX_H
 
-#include <cstring>
 #include <iostream>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include <queue>
+
+class HttpParser;
 
 class CHandlerLinux
 {
@@ -17,17 +14,19 @@ public:
 
 	void read();
 
-	void parser();
+	Message parser(std::string_view data);
 
-	void edit();
+    //no edit for now
+	//void edit();
 
 	void forward();
 
 private:
-	int m_conn;
+    std::string m_buffer;
+	int m_clientSocket;
+
 	HttpParser m_parser;
 	std::queue<Message> m_messages;
-
 };
 
 #endif

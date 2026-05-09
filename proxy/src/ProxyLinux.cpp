@@ -1,5 +1,11 @@
 #include "ProxyLinux.h"
 
+ProxyLinux::ProxyLinux(std::string host, std::string port, 
+        std::vector<std::unique_ptr<CHandlerLinux>>& conns)
+    : m_conns(conns), m_host(host), m_port(port)
+{
+}
+
 int ProxyLinux::create()
 {
     m_socket = socket(AF_INET, SOCK_STREAM, 0);    
@@ -40,13 +46,33 @@ int ProxyLinux::start()
         //throw error
         return 1;
     }
-   
+
     listen(m_socket, 5);
 
-    int clientSocket = accept(m_socket, result->ai_addr, &result->ai_addrlen);
+    proxyRun = true;
+    
+    while(proxyRun)
+    {
+        int clientSocket;
 
-    //ConnectionHandler newConn(clientSocket); 
+        if((clientSocket = accept(m_socket, result->ai_addr, &result->ai_addrlen)) != 0)
+        {
+            std::cerr << "[Error] accepting connection\n";
+            continue;
+        }
 
-    //Como criar o connectionHandler? Dar clientSocket pra ele apenas? Dar addrinfo?
-    return 0;
+        //if(keepMessages)
+        //{
+           //ConnectionHandler newConn(clientSocket);
+           
+        //} else
+        
+        CHandlerLinux newConn(clientSocket);
+    
+        //Thred Pool para handlers 
+        std::thread t(newConn->start());
+        m_conns.push_back(newConn);
+    }
+
+    return 0; 
 }

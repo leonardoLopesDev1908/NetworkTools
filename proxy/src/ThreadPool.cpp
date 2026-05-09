@@ -1,23 +1,23 @@
-#include "ThreadPool"
+#include "ThreadPool.h"
 
-ThreadPool::ThreadPool(std::size_t numThreads = std::thread::hardware_concurrency())
+ThreadPool::ThreadPool(std::size_t numThreads)
 {
     for(std::size_t i = 0; i < numThreads; ++i)
     {
         m_pool.emplace_back([this] {
             while(true)
             {
-                std::funcion<void> task;
+                std::function<void()> task;
                 {
                     std::unique_lock<std::mutex> lck(m_mutex);
 
-                    m_cond.wait([&]{!m_pool.empty() || !m_stop;});
+                    m_cond.wait(lck, [&]{ return !m_taskQueue.empty() || m_stop;});
 
-                    if(m_stop && m_pool.empty())
+                    if(m_stop && m_taskQueue.empty())
                         return;
 
-                    task = std::move(m_pool.front();
-                    m_pool.pop();
+                    task = std::move(m_taskQueue.front());
+                    m_taskQueue.pop();
                 }
                 task();
             }
@@ -41,11 +41,11 @@ ThreadPool::~ThreadPool()
         t.join();
 }
 
-void ThreadPool::enqueue(std::function<void> task)
+void ThreadPool::enqueue(std::function<void()> task)
 {
     {
         std::unique_lock<std::mutex>lck (m_mutex);
-        m_queue.push(std::move(task));
+        m_taskQueue.push(std::move(task));
     }
     
     m_cond.notify_one();

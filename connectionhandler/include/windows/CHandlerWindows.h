@@ -2,6 +2,7 @@
 #define CHANDLER_WINDOWS_H
 
 #include "HttpParser.h"
+#include "Message.h"
 
 //NOLINTBEGIN(llvm-include-order)
 #include <WinSock2.h>  
@@ -9,27 +10,29 @@
 #include <Windows.h>     
 //NOLINTEND(llvm-include-order)
 
+#include <iostream>
 #include <queue>
+
+class QueueMessage;
 
 class CHandlerWindows
 {
 public:
 
-	CHandlerWindows(SOCKET connection);
+	CHandlerWindows(SOCKET connection, QueueMessage& messages);
 
 	void read();
 
-	void parser();
-
-	void edit();
+	//void edit();
 
 	void forward();
 
 private:
-	SOCKET m_conn;
+	std::string m_buffer;
+	SOCKET m_clientSocket;
 	HttpParser m_parser;
-	std::queue<Message> m_messages;
 
+	QueueMessage& m_messages;
 };
 
 #endif

@@ -1,8 +1,8 @@
 #include "ProxyWindows.h"
 
 ProxyWindows::ProxyWindows(std::string host, std::string port)
-	: m_host(host), m_port(port) {
-	
+	: m_host(host), m_port(port) 
+{	
 }
 
 ProxyWindows::~ProxyWindows()
@@ -92,17 +92,18 @@ int ProxyWindows::start()
 			return 1;
 		}
 
-		if (keepMessage)
-		{
+		//if (keepMessage)
+		//{
 			//asynchronous launch to edit message
 			// 
 			//ConnectionHandler newConn(client); 
-		}
-		else
-		{
-			//just keep at 
-		}
-
+		//}
+		
+		auto newConn = std::make_shared<CHandlerWindows>(client, m_messages);
+		
+		m_conns.enqueue([conn = std::move(newConn)](){
+			conn->read();
+		});
 	}
 	return 0;
 }

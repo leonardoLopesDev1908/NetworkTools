@@ -4,6 +4,8 @@
 #define NOMINMAX
 
 #include "CHandlerWindows.h"
+#include "QueueMessage.h"
+#include "ThreadPool.h"
 
 //NOLINTBEGIN(llvm-include-order)
 #include <WinSock2.h>  
@@ -16,7 +18,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
 
 class ProxyWindows
 {
@@ -39,7 +40,8 @@ private:
 	std::atomic<bool> proxyRun = false;
 	std::atomic<bool> keepMessage = false;
 
-	std::vector<std::unique_ptr<CHandlerWindows>> m_conns;
+	ThreadPool m_conns;
+	QueueMessage m_messages;
 };
 
 #endif

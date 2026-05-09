@@ -12,8 +12,7 @@ endif()
 add_library(CHandler STATIC ${SOURCES})
 
 target_include_directories(CHandler PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${PLATFORM_INCLUDE_DIR}
+	${CHANDLER_INCLUDE_DIR}
 )
 
-target_link_libraries(CHandler PRIVATE Parser)
+target_link_libraries(CHandler PUBLIC Parser Message)

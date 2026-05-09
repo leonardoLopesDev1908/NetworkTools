@@ -7,20 +7,20 @@
 #include <queue>
 
 class QueueMessage
-{
-    QueueMessage(std::size_t size);
-    
+{   
     void push(Message msg);            
     void tryPush(Message msg);
     Message pop();
     Message tryPop();
     Message front();
+    bool empty() const;
 
 private:
+    bool isSafe = true;
+
     std::queue<Message> m_messages;
-    std::mutex qMutex;
+    std::mutex m_mutex;
     std::condition_variable m_cond;
 };
 
-
-#define
+#endif

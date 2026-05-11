@@ -7,7 +7,7 @@
 
 Message HttpParser::parse(std::string& raw, Direction direction)
 {
-    Message msg;
+    Message msg{};
     msg.direction = direction;
 
     std::string firstLine = getFirstLine(raw);

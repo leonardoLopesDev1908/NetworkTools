@@ -3,24 +3,32 @@
 
 #include "Message.h"
 
-#include <condition_variable>
-#include <queue>
+#include <ftxui/component/screen_interactive.hpp>
+
+#include <atomic>
+#include <deque>
+#include <mutex>
 
 class QueueMessage
 {   
+public:
     void push(Message msg);            
-    void tryPush(Message msg);
+    void tryPush(Message&& msg);
     Message pop();
     Message tryPop();
     Message front();
     bool empty() const;
 
-private:
-    bool isSafe = true;
+    void setScreen(ftxui::ScreenInteractive* screen);
+    std::deque<Message> snapshot();
 
-    std::queue<Message> m_messages;
-    std::mutex m_mutex;
-    std::condition_variable m_cond;
+private:
+    ftxui::ScreenInteractive* m_screen = nullptr;
+
+    std::deque<Message> m_messages;
+    
+    std::mutex m_queueMutex;
+    std::mutex m_screenMutex;
 };
 
 #endif

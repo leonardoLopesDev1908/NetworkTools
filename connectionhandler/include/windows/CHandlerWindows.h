@@ -3,6 +3,7 @@
 
 #include "HttpParser.h"
 #include "Message.h"
+#include "QueueMessage.h"
 
 //NOLINTBEGIN(llvm-include-order)
 #include <WinSock2.h>  
@@ -13,21 +14,23 @@
 #include <iostream>
 #include <queue>
 
-class QueueMessage;
-
 class CHandlerWindows
 {
 public:
 
 	CHandlerWindows(SOCKET connection, QueueMessage& messages);
+	~CHandlerWindows();
 
-	void read();
-
+	void start();
 	//void edit();
-
 	void forward();
+	void closeSocket();
 
 private:
+	void read();
+	
+	bool receiving = true;
+
 	std::string m_buffer;
 	SOCKET m_clientSocket;
 	HttpParser m_parser;

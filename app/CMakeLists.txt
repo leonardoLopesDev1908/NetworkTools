@@ -14,3 +14,9 @@ target_link_libraries(AppInterceptor PUBLIC Proxy Message ftxui::screen ftxui::d
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(AppInterceptor PRIVATE ws2_32)
 endif()
+
+target_precompile_headers(AppInterceptor PRIVATE 
+    <ftxui/screen/screen.hpp> 
+    <ftxui/dom/elements.hpp> 
+    <ftxui/component/component.hpp>
+)

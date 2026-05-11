@@ -31,10 +31,13 @@ public:
 	ProxyWindows(std::string host, std::string port);
 	~ProxyWindows();
 
-	int create();
-	int start();
+	void create();
+	void start();
 	void stop();
 	void keep();
+	void closeSocket();
+
+	QueueMessage& getQueue();
 
 private:
 	std::atomic<bool> proxyRun = false;

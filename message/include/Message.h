@@ -22,10 +22,11 @@ struct RequestLine
     std::string version;
 };
 
+
 struct StatusLine
 {
     std::string version;
-    int statusCode;
+    int statusCode{};
     std::string statusText;
 };
 
@@ -35,6 +36,14 @@ struct Message
     std::variant<StatusLine, RequestLine> startLine;
     std::unordered_map<std::string, std::string> headers;
     std::string body;
+
+    Message() noexcept = default;
+
+    Message(const Message& other) noexcept = default;
+    Message& operator=(const Message& other) noexcept = default;
+
+    Message(Message&& other) noexcept = default;
+    Message& operator=(Message&& other) noexcept = default;
 
     bool isRequest() const
     {

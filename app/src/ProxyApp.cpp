@@ -1,6 +1,17 @@
 #include "ProxyApp.h"
 
+#include <format>
+
 using namespace ftxui;
+
+ProxyApp::~ProxyApp()
+{
+    if (m_proxy)
+        m_proxy->stop();
+
+    if (proxyThread.joinable())
+        proxyThread.join();
+}
 
 ftxui::Element ProxyApp::manual_page()
 {
@@ -111,6 +122,10 @@ ftxui::Element ProxyApp::manual_page()
 
 ftxui::Element ProxyApp::input_endpoint_page()
 {
+    auto errorElement = m_submitError.empty()
+        ? text("")
+        : text(m_submitError) | color(Color::Red) | bold;
+
     return vbox({
         text("Endpoint Configuration") | bold,
         separator(),
@@ -124,6 +139,7 @@ ftxui::Element ProxyApp::input_endpoint_page()
             inputPort->Render()
         }),
         separator(),
+        errorElement,
         btnSubmit->Render(),
         separator(),
         text("Esc to comeback to menu") | color(Color::GrayLight) | italic,
@@ -132,8 +148,75 @@ ftxui::Element ProxyApp::input_endpoint_page()
 
 ftxui::Element ProxyApp::messages_menu_page()
 {
+    if (endpointState.host == "" &&
+        endpointState.port == "")
+    {
+        return text("Enter a endpoint at page 2");
+    }
 
-    return text("\nEnter a endpoint at page 2.\n");
+    auto messages = m_proxy->getQueue().snapshot();
+
+    if (messages.empty())
+    {
+        return text("Queue is empty.");
+    }
+
+    //messagesState.m_messageEntries.clear();
+    for (auto it = messages.begin(); it != messages.end(); it++)
+    {
+        std::string entry;
+        if (it->isRequest()) {
+            entry = std::format("{:<6} {:<8} {}",
+                messagesState.m_messageEntries.size() + 1,
+                it->request().method,
+                it->request().path);
+        }
+        else {
+            entry = std::format("{:<6} {:<8} {}",
+                messagesState.m_messageEntries.size() + 1,
+                it->respose().statusCode,
+                it->respose().statusText);
+        }
+        messagesState.m_messageEntries.push_back(entry);
+    }
+
+    //Implementar variacao com linguagem
+    Element detail = text("Select a message") | center;
+
+    if (messagesState.selectedMessage >= 0 &&
+        messagesState.selectedMessage < messages.size())
+    {
+        const auto& msg = messages[messagesState.selectedMessage];
+        std::vector<Element> headerElements;
+        for (const auto& [key, value] : msg.headers)
+        {
+            headerElements.push_back(text(key + ": " + value));
+        }
+
+        detail = vbox({
+            text("Headers: ") | bold,
+            vbox(std::move(headerElements)),
+            separator(),
+            text("Body: ") | bold,
+            paragraph(msg.body)
+            });
+
+        return vbox({
+            hbox({
+                text(" #      ") | bold,
+                text(" Method ") | bold,
+                text(" Path/Status   ") | bold,
+            }) | color(Color::Blue),
+            separator(),
+            messages_container->Render() | flex,
+            separator(),
+            detail | flex,
+            }) | border;
+    }
+    else
+    {
+        return text("Invalid index.");
+    }
 }
 
 ftxui::Element ProxyApp::options_page()
@@ -150,6 +233,7 @@ ftxui::Element ProxyApp::options_page()
 void ProxyApp::start() {
 
     auto screen = ftxui::ScreenInteractive::Fullscreen();
+
     auto header =
         hbox({
             text(" ProxyInterceptor ") | color(Color::Blue),
@@ -176,18 +260,31 @@ void ProxyApp::start() {
     });
 
     auto submitEndpoint = [&] {
+        m_submitError = "";
+
         if(endpointState.host.empty() 
             || endpointState.port.empty())
         {
+            m_submitError = "Host or port empties.";
+            return;
         }
+
         #ifdef _WIN32
             m_proxy = std::make_shared<ProxyWindows>(endpointState.host, endpointState.port);
         #elif __linux__
             m_proxy = std::make_shared<ProxyLinux>(endpointState.host, endpointState.port);
         #endif
-        proxyThread = std::thread([p = m_proxy] {
-            p->start();
+        proxyThread = std::thread([p = m_proxy, &error = m_submitError, &screen] {
+            try {
+                p->start();
+            }
+            catch (std::exception& e)
+            {
+                error = e.what();
+                screen.PostEvent(ftxui::Event::Custom); 
+            }
         });
+        m_proxy->getQueue().setScreen(&screen);
     };
     
     btnSubmit = Button("Launch proxy", submitEndpoint, ButtonOption::Animated());
@@ -200,7 +297,7 @@ void ProxyApp::start() {
 
     //Message selection
     messages_container = Menu({
-        &messagesState.messages,
+        &messagesState.m_messageEntries,
         &messagesState.selectedMessage
     });
 

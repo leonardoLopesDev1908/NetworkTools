@@ -7,19 +7,17 @@ ProxyWindows::ProxyWindows(std::string host, std::string port)
 
 ProxyWindows::~ProxyWindows()
 {
+	m_messages.setScreen(nullptr);
 	if (m_socket != INVALID_SOCKET)
-	{
 		closesocket(m_socket);
-	}
 	WSACleanup();
 }
 
-int ProxyWindows::create()
+void ProxyWindows::create()
 {
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
 	{
-		std::cout << "[Error] start\n";
-		return 1;
+		throw  std::runtime_error("[Error] start\n");
 	}
 
 	struct addrinfo* result = nullptr;
@@ -32,11 +30,11 @@ int ProxyWindows::create()
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
 
-	if (getaddrinfo(m_host.c_str(), m_port.c_str(), &hints, &result) != 0)
+	int iResult = getaddrinfo(m_host.c_str(), m_port.c_str(), &hints, &result);
+
+	if (iResult != 0)
 	{
-		std::cout << "[Error] getaddrinfo\n";
-		WSACleanup();
-		return 1;
+		throw std::runtime_error("[Error] getaddrinfo: " + std::to_string(iResult));
 	}
 
 	m_socket = INVALID_SOCKET;
@@ -44,39 +42,29 @@ int ProxyWindows::create()
 
 	if (m_socket == INVALID_SOCKET)
 	{
-		std::cout << "[Error] invalid socket\n";
 		freeaddrinfo(result);
-		WSACleanup();
-		return 1;
+		throw std::runtime_error("[Error] invalid socket\n");
 	}
 
 	if (bind(m_socket, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR)
 	{
-		std::cout << "[Error] binding socket\n";
 		freeaddrinfo(result);
 		closesocket(m_socket);
-		WSACleanup();
-		return 1;
+		throw std::runtime_error("[Error] binding socket\n");
 	}
+	
+	if(result != nullptr)
+		freeaddrinfo(result);
 
-	freeaddrinfo(result);
-	return 0;
 }
 
-int ProxyWindows::start()
+void ProxyWindows::start()
 {
-	if (create() != 0)
-	{
-		//throw std::err...
-		return 1;
-	}
+	create();
 
 	if (listen(m_socket, 5) == SOCKET_ERROR)
 	{
-		std::cout << "[Error] listening socket\n";
-		closesocket(m_socket);
-		WSACleanup();
-		return 1;
+		throw std::runtime_error("[Error] listening socket\n");
 	}
 
 	proxyRun = true;
@@ -84,12 +72,9 @@ int ProxyWindows::start()
 	while (proxyRun)
 	{
 		SOCKET client = INVALID_SOCKET;
-		if ((client = accept(client, NULL, NULL)) == INVALID_SOCKET)
+		if ((client = accept(m_socket, NULL, NULL)) == INVALID_SOCKET)
 		{
-			std::cout << "[Error] accepting\n";
-			closesocket(m_socket);
-			WSACleanup();
-			return 1;
+			throw std::runtime_error("[Error] accepting socket");
 		}
 
 		//if (keepMessage)
@@ -102,10 +87,9 @@ int ProxyWindows::start()
 		auto newConn = std::make_shared<CHandlerWindows>(client, m_messages);
 		
 		m_conns.enqueue([conn = std::move(newConn)](){
-			conn->read();
+			conn->start();
 		});
 	}
-	return 0;
 }
 
 void ProxyWindows::keep()
@@ -116,6 +100,19 @@ void ProxyWindows::keep()
 void ProxyWindows::stop()
 {
 	proxyRun = false;
-	closesocket(m_socket);
+	if(m_socket != INVALID_SOCKET)
+		closesocket(m_socket);
 	WSACleanup();
+}
+
+void ProxyWindows::closeSocket()
+{
+	SOCKET s = std::exchange(m_socket, INVALID_SOCKET);
+	if (s != INVALID_SOCKET)
+		closesocket(s);
+}
+
+QueueMessage& ProxyWindows::getQueue()
+{
+	return m_messages;
 }

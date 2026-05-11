@@ -31,10 +31,6 @@ ThreadPool::~ThreadPool()
         std::unique_lock<std::mutex>lck (m_mutex);
         m_stop = true;
     }
-
-    if(m_stop && m_pool.empty())
-        return;
-    
     m_cond.notify_all();
 
     for(auto& t : m_pool)

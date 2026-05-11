@@ -22,6 +22,7 @@ using namespace ftxui;
 class ProxyApp 
 {
 public:    
+    ~ProxyApp();
     void start();
     ftxui::Element manual_page();
     ftxui::Element input_endpoint_page();
@@ -33,10 +34,7 @@ private:
 
     struct MessagesMenuState
     {
-        //std::queue<Message> messages;
-        std::vector<std::string> messages = {
-            "a",  "c", "acae", "ascnoa"
-        };
+        std::vector<std::string> m_messageEntries;
         int selectedMessage = 0;
     };
 
@@ -58,6 +56,7 @@ private:
 private:
     int selected = 0;
     int activeTab = 0;
+    std::string m_submitError;
 
     InputEndpointState endpointState;
     MessagesMenuState messagesState;

@@ -1,25 +1,73 @@
 #include "CHandlerWindows.h"
 
+#include <string>
+
 CHandlerWindows::CHandlerWindows(SOCKET client, QueueMessage& messages)
 	: m_clientSocket(client), m_messages(messages)
 {
 }
 
+CHandlerWindows::~CHandlerWindows()
+{
+	if(m_clientSocket != INVALID_SOCKET)
+		closesocket(m_clientSocket);
+}
+
+void CHandlerWindows::start()
+{
+	while (receiving)
+		read();
+}
+
 void CHandlerWindows::read()
 {
-	while (recv(m_clientSocket, m_buffer.data(), 1024, 0) != 0)
+	char temp[4096];
+	Direction direction;
+	size_t headerEnd = std::string::npos;
+
+	while (headerEnd == std::string::npos)
 	{
-		//Include verification to know the direction
-		Direction direction = Direction::Inbound;
+		int bytes = recv(m_clientSocket, temp, sizeof(temp), 0);
+		if (bytes <= 0) {
+			receiving = false;
+			break;
+		}
 
-		Message msg = m_parser.parse(m_buffer, direction);
-
-
-		m_buffer.clear();
+		m_buffer.append(temp, bytes);
+		headerEnd = m_buffer.find("\r\n\r\n");
 	}
+
+	size_t pos = m_buffer.find("Content-Length: ");
+	if (pos != std::string::npos)
+	{
+		int length = std::stoi(m_buffer.substr(pos + 16, m_buffer.find("\r\n", pos)));
+		size_t bodyStart = headerEnd + 4;
+		size_t currentBodySize = m_buffer.size() - bodyStart;
+
+		while (currentBodySize < length)
+		{
+			int bytes = recv(m_clientSocket, temp, sizeof(temp), 0);
+			if (bytes <= 0) {
+				receiving = false;
+				break;
+			}
+
+			m_buffer.append(temp, bytes);
+			currentBodySize += bytes;
+		}
+	}
+
+	std::string firstLine = m_buffer.substr(0, m_buffer.find("\r\n"));
+
+	if (firstLine.find("HTTP") > 0)
+		direction = Direction::Inbound;
+	else
+		direction = Direction::Outbound;
+
+	m_messages.tryPush(m_parser.parse(m_buffer, direction));
 }
 
 void CHandlerWindows::forward()
 {
-
+	
 }

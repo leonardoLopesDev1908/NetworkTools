@@ -32,7 +32,7 @@ struct StatusLine
 
 struct Message
 {
-    Direction direction;
+    Direction direction{};
     std::variant<StatusLine, RequestLine> startLine;
     std::unordered_map<std::string, std::string> headers;
     std::string body;
@@ -55,7 +55,7 @@ struct Message
         return std::get<RequestLine>(startLine);
     }
 
-    StatusLine respose()
+    StatusLine response()
     {
         return std::get<StatusLine>(startLine);
     }

@@ -48,10 +48,9 @@ void ProxyWindows::create()
 		freeaddrinfo(result);
 		error("[Error] binding socket\n");
 	}
-	
-	if(result != nullptr)
-		freeaddrinfo(result);
 
+	if (result != nullptr)
+		freeaddrinfo(result);
 }
 
 void ProxyWindows::start()
@@ -67,8 +66,8 @@ void ProxyWindows::start()
 
 	while (proxyRun)
 	{
-		SOCKET client = INVALID_SOCKET;
-		if ((client = accept(m_socket, NULL, NULL)) == INVALID_SOCKET)
+		SOCKET clientSocket = INVALID_SOCKET;
+		if ((clientSocket = accept(m_socket, NULL, NULL)) == INVALID_SOCKET)
 		{
 			error("[Error] accepting socket");
 		}
@@ -80,7 +79,11 @@ void ProxyWindows::start()
 			//ConnectionHandler newConn(client); 
 		//}
 		
-		auto newConn = std::make_shared<CHandlerWindows>(client, m_messages);
+		//SOCKET forwardSocket = createSocket();
+		//Pass
+
+
+		auto newConn = std::make_shared<CHandlerWindows>(std::move(clientSocket), m_messages);
 		{
 			std::lock_guard<std::mutex> lck(m_handlersMutex);
 			m_handlers.push_back(newConn);
@@ -114,13 +117,6 @@ void ProxyWindows::stop()
 
 	m_conns.stop();
 	WSACleanup();
-}
-
-void ProxyWindows::closeSocket()
-{
-	SOCKET s = std::exchange(m_socket, INVALID_SOCKET);
-	if (s != INVALID_SOCKET)
-		closesocket(s);
 }
 
 QueueMessage& ProxyWindows::getQueue()

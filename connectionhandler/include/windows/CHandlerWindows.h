@@ -18,23 +18,29 @@
 class CHandlerWindows
 {
 public:
-
-	CHandlerWindows(SOCKET connection, QueueMessage& messages);
+	CHandlerWindows(SOCKET&& connection, QueueMessage& messages, std::string& port);
 	~CHandlerWindows();
 
 	void start();
 	//void edit();
-	void forward(std::string destiny);
+	void forwardInbound(std::string destiny);
+	void forwardOutbound();
 	void closeSocket();
 	void stop();
 
 private:
 	void read();
+	void remoteSocket(const std::string& destiny);
 	
+private:
 	std::atomic<bool> receiving = true;
+	std::string& m_port;
 
-	std::string m_buffer;
+	std::string m_responseBuf;
+	std::string m_requestBuf;
+
 	SOCKET m_clientSocket;
+	SOCKET m_forwardSocket = INVALID_SOCKET;
 	HttpParser m_parser;
 
 	QueueMessage& m_messages;

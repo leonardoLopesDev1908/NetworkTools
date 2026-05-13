@@ -1,5 +1,7 @@
 #include "QueueMessage.h"
 
+#include <fstream>
+
 void QueueMessage::push(Message msg)
 {
     m_messages.push_back(msg);
@@ -44,7 +46,6 @@ bool QueueMessage::empty() const
 
 void QueueMessage::setScreen(ftxui::ScreenInteractive* screen)
 {
-    //std::lock_guard<std::mutex> lck(m_screenMutex);
     m_screen = screen;
 }
 

@@ -2,11 +2,22 @@
 #define HTTP_PARSER_CPP
 
 #include "HttpParser.h"
+
+#include <fstream>
+#include <sstream>
 #include <stdlib.h>
 #include <string>
 
 Message HttpParser::parse(std::string& raw, Direction direction)
 {
+    std::ofstream logFile("C:\\Users\\teste\\Desktop\\logfile.txt", std::ios::app);
+    if (logFile.is_open())
+    {
+        logFile << "Raw message\n";
+        logFile << raw;
+        logFile << "\n";
+    }
+
     Message msg{};
     msg.direction = direction;
 
@@ -15,19 +26,34 @@ Message HttpParser::parse(std::string& raw, Direction direction)
     if(firstLine.substr(0, 5) == "HTTP/")
     {
         StatusLine sl;
-        sscanf(firstLine.c_str(), "%s %d %[^\r\n]", 
-                sl.version.data(), &sl.statusCode, sl.statusText.data());
+        std::istringstream iss(firstLine);
+        iss >> sl.version >> sl.statusCode >> sl.version;
+
         msg.startLine = sl;
+
+        //Log
+       /* logFile << "Parsed message\n";
+        logFile << msg.response().version << " ";
+        logFile << msg.response().statusText << " ";
+        logFile << msg.response().version << " ";
+        logFile << "\n";*/
     }
     else
     {
         RequestLine rl;
-        sscanf(firstLine.c_str(), "%s %d %s", 
-            rl.method.data(), rl.path.data(), rl.version.data());
+        std::istringstream iss(firstLine);
+        iss >> rl.method >> rl.path >> rl.version;
         msg.startLine = rl;
+
+        //Log
+        //logFile << "Parsed message\n";
+        //logFile << msg.request().method << " ";
+        //logFile << msg.request().path << " ";
+        //logFile << msg.request().version << " ";
+        //logFile << "\n";
     }
 
-    size_t endHeaders = parseHeaders(raw, firstLine.size(), msg.headers);
+    size_t endHeaders = parseHeaders(raw, firstLine.size() + 2, msg.headers);
 
     try {
         if (msg.headers.contains("Content-Length") &&
@@ -40,6 +66,10 @@ Message HttpParser::parse(std::string& raw, Direction direction)
     {
         std::cout << "Invalid argument: " << e.what() << "\n";
     }
+
+   /* for (auto& [key, value] : msg.headers)
+        logFile << key << ": " << value << "\n";*/
+
     return msg;
 }
 
@@ -59,6 +89,9 @@ size_t HttpParser::parseHeaders(std::string& raw, size_t start,
     while(true)
     {
         end = raw.find("\r\n", start);
+        if (end == std::string::npos)
+            break;
+
         std::string line = raw.substr(start, end - start);
         
         if(line == "") //end of headers
@@ -67,18 +100,18 @@ size_t HttpParser::parseHeaders(std::string& raw, size_t start,
         size_t endKey = line.find(":");
         headers.insert({
             line.substr(0, endKey), 
-            line.substr(endKey + 1, line.size() - endKey - 1)
+            line.substr(endKey + 2)
         });
 
         start = end + 2;
     }   
-    return end;
+    return end + 2;
 }
 
 std::string HttpParser::parseBody(std::string& raw, size_t start, std::string len)
 {
     size_t size;
-    sscanf(len.c_str(), "%zu", &size);
+    sscanf_s(len.c_str(), "%zu", &size);
     
     std::string body(raw.data(), start, size);
 

@@ -172,8 +172,8 @@ ftxui::Element MainApp::messages_menu_page()
         else {
             entry = std::format("{:<6} {:<8} {}",
                 messagesState.m_messageEntries.size() + 1,
-                it->respose().statusCode,
-                it->respose().statusText);
+                it->response().statusCode,
+                it->response().statusText);
         }
         messagesState.m_messageEntries.push_back(entry);
     }

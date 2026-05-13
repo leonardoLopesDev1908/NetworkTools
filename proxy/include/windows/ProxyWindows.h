@@ -35,7 +35,6 @@ public:
 	void start();
 	void stop();
 	void keep();
-	void closeSocket();
 	QueueMessage& getQueue();
 	void error(const std::string& errorMessage);
 

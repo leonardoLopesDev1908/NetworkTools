@@ -1,9 +1,10 @@
 #include "CHandlerWindows.h"
 
+#include <fstream>
 #include <string>
 
-CHandlerWindows::CHandlerWindows(SOCKET client, QueueMessage& messages)
-	: m_clientSocket(client), m_messages(messages)
+CHandlerWindows::CHandlerWindows(SOCKET&& client, QueueMessage& messages, std::string& port)
+	: m_clientSocket(std::move(client)), m_messages(messages), m_port(port)
 {
 }
 
@@ -32,16 +33,16 @@ void CHandlerWindows::read()
 			break;
 		}
 
-		m_buffer.append(temp, bytes);
-		headerEnd = m_buffer.find("\r\n\r\n");
+		m_requestBuf.append(temp, bytes);
+		headerEnd = m_requestBuf.find("\r\n\r\n");
 	}
 
-	size_t pos = m_buffer.find("Content-Length: ");
+	size_t pos = m_requestBuf.find("Content-Length: ");
 	if (pos != std::string::npos)
 	{
-		int length = std::stoi(m_buffer.substr(pos + 16, m_buffer.find("\r\n", pos)));
+		int length = std::stoi(m_requestBuf.substr(pos + 16, m_requestBuf.find("\r\n", pos)));
 		size_t bodyStart = headerEnd + 4;
-		size_t currentBodySize = m_buffer.size() - bodyStart;
+		size_t currentBodySize = m_requestBuf.size() - bodyStart;
 
 		while (currentBodySize < length)
 		{
@@ -51,39 +52,98 @@ void CHandlerWindows::read()
 				break;
 			}
 
-			m_buffer.append(temp, bytes);
+			m_requestBuf.append(temp, bytes);
 			currentBodySize += bytes;
 		}
 	}
 
-	std::string firstLine = m_buffer.substr(0, m_buffer.find("\r\n"));
+	std::string firstLine = m_requestBuf.substr(0, m_requestBuf.find("\r\n"));
 
 	if (firstLine.find("HTTP") > 0)
 		direction = Direction::Inbound;
 	else
 		direction = Direction::Outbound;
 
-	m_messages.tryPush(std::move(m_parser.parse(m_buffer, direction)));
+	Message msg = m_parser.parse(m_requestBuf, direction);
+	std::string destiny;
 
 	if (direction == Direction::Inbound)
 	{
-		size_t startServerOrigin = firstLine.find("/");
-		std::string destiny = firstLine.substr(
-			startServerOrigin,
-			firstLine.find("HTTP") - startServerOrigin 
-		);
-		forward(destiny);
+		destiny = msg.headers["Host"];
+		forwardInbound(destiny);
 	}
+	else
+		forwardOutbound();
+
+	m_messages.tryPush(std::move(msg));
 }
 
-void CHandlerWindows::forward(std::string destiny)
+void CHandlerWindows::forwardInbound(std::string destiny)
 {
 	size_t sentBytes = 0;
-	while (sentBytes < destiny.size())
+	remoteSocket(destiny);
+
+	while (sentBytes < m_requestBuf.size())
 	{
-		int bytes = send(m_clientSocket, destiny.c_str(), sizeof(destiny), 0);
+		int bytes = send(m_forwardSocket, m_requestBuf.c_str(), m_requestBuf.size(), 0);
 		sentBytes += bytes;
 	}
+
+	m_requestBuf.clear();
+
+	char response[4096];
+	size_t receivedBytes;
+	while (true)
+	{
+		int bytes = recv(m_forwardSocket, response, sizeof(response), 0);
+		if (bytes <= 0) break;
+
+		m_requestBuf.append(response, bytes);
+	}
+
+	forwardOutbound();
+}
+
+void CHandlerWindows::forwardOutbound()
+{
+	size_t sentBytes = 0;
+	while (sentBytes < m_responseBuf.size())
+	{
+		int bytes = send(m_clientSocket, m_responseBuf.c_str(), m_responseBuf.size(), 0);
+		sentBytes += bytes;
+	}
+
+	m_responseBuf.clear();
+}
+
+//when to close this socket?
+void CHandlerWindows::remoteSocket(const std::string& hostDestiny)
+{
+	struct addrinfo hints{}, *result = nullptr;
+	ZeroMemory(&hints, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	if (getaddrinfo(hostDestiny.c_str(), m_port.c_str(), &hints, &result) != 0)
+	{
+		throw new std::runtime_error("[Error]: getaddrinfo forward socket\n");
+	}
+
+	m_forwardSocket = socket(result->ai_family, result->ai_socktype, (int)result->ai_addrlen);
+	if (m_forwardSocket == INVALID_SOCKET)
+	{
+		freeaddrinfo(result);
+		throw new std::runtime_error("[Error]: socket forward socket\n");
+	}
+
+	if (connect(m_forwardSocket, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR)
+	{
+		freeaddrinfo(result);
+		throw new std::runtime_error("[Error]: connect forward socket\n");
+	}
+
+	freeaddrinfo(result);
 }
 
 void CHandlerWindows::stop()
@@ -92,4 +152,9 @@ void CHandlerWindows::stop()
 	SOCKET s = std::exchange(m_clientSocket, INVALID_SOCKET);
 	if (s != INVALID_SOCKET)
 		closesocket(s);
+
+	SOCKET f = std::exchange(m_forwardSocket, INVALID_SOCKET);
+	if (f != INVALID_SOCKET)
+		closesocket(f);
 }
+

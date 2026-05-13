@@ -1,16 +1,13 @@
 #include "ProxyWindows.h"
 
-ProxyWindows::ProxyWindows(std::string host, std::string port)
+ProxyWindows::ProxyWindows(std::string* host, std::string* port)
 	: m_host(host), m_port(port) 
 {	
 }
 
 ProxyWindows::~ProxyWindows()
 {
-	m_messages.setScreen(nullptr);
-	if (m_socket != INVALID_SOCKET)
-		closesocket(m_socket);
-	WSACleanup();
+	stop();
 }
 
 void ProxyWindows::create()
@@ -30,11 +27,11 @@ void ProxyWindows::create()
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
 
-	int iResult = getaddrinfo(m_host.c_str(), m_port.c_str(), &hints, &result);
+	int iResult = getaddrinfo(m_host->c_str(), m_port->c_str(), &hints, &result);
 
 	if (iResult != 0)
 	{
-		throw std::runtime_error("[Error] getaddrinfo: " + std::to_string(iResult));
+		error("[Error] getaddrinfo: " + std::to_string(iResult));
 	}
 
 	m_socket = INVALID_SOCKET;
@@ -43,14 +40,13 @@ void ProxyWindows::create()
 	if (m_socket == INVALID_SOCKET)
 	{
 		freeaddrinfo(result);
-		throw std::runtime_error("[Error] invalid socket\n");
+		error("[Error] invalid socket\n");
 	}
 
 	if (bind(m_socket, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR)
 	{
 		freeaddrinfo(result);
-		closesocket(m_socket);
-		throw std::runtime_error("[Error] binding socket\n");
+		error("[Error] binding socket\n");
 	}
 	
 	if(result != nullptr)
@@ -64,7 +60,7 @@ void ProxyWindows::start()
 
 	if (listen(m_socket, 5) == SOCKET_ERROR)
 	{
-		throw std::runtime_error("[Error] listening socket\n");
+		error("[Error] listening socket\n");
 	}
 
 	proxyRun = true;
@@ -74,7 +70,7 @@ void ProxyWindows::start()
 		SOCKET client = INVALID_SOCKET;
 		if ((client = accept(m_socket, NULL, NULL)) == INVALID_SOCKET)
 		{
-			throw std::runtime_error("[Error] accepting socket");
+			error("[Error] accepting socket");
 		}
 
 		//if (keepMessage)
@@ -85,8 +81,11 @@ void ProxyWindows::start()
 		//}
 		
 		auto newConn = std::make_shared<CHandlerWindows>(client, m_messages);
-		
-		m_conns.enqueue([conn = std::move(newConn)](){
+		{
+			std::lock_guard<std::mutex> lck(m_handlersMutex);
+			m_handlers.push_back(newConn);
+		}
+		m_conns.enqueue([conn = newConn](){
 			conn->start();
 		});
 	}
@@ -99,9 +98,21 @@ void ProxyWindows::keep()
 
 void ProxyWindows::stop()
 {
+	m_messages.setScreen(nullptr);
 	proxyRun = false;
-	if(m_socket != INVALID_SOCKET)
-		closesocket(m_socket);
+	
+	SOCKET s = std::exchange(m_socket, INVALID_SOCKET);
+	if(s != INVALID_SOCKET)
+		closesocket(s);
+
+	{
+		std::lock_guard<std::mutex>lck(m_handlersMutex);
+		for (auto& handler : m_handlers)
+			handler->stop();
+		m_handlers.clear();
+	}
+
+	m_conns.stop();
 	WSACleanup();
 }
 
@@ -115,4 +126,12 @@ void ProxyWindows::closeSocket()
 QueueMessage& ProxyWindows::getQueue()
 {
 	return m_messages;
+}
+
+void ProxyWindows::error(const std::string& errorMessage)
+{
+	m_host->clear();
+	m_port->clear();
+	stop();
+	throw std::runtime_error(errorMessage);
 }

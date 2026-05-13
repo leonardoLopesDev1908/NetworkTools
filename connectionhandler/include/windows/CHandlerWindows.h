@@ -11,6 +11,7 @@
 #include <Windows.h>     
 //NOLINTEND(llvm-include-order)
 
+#include <atomic>
 #include <iostream>
 #include <queue>
 
@@ -23,13 +24,14 @@ public:
 
 	void start();
 	//void edit();
-	void forward();
+	void forward(std::string destiny);
 	void closeSocket();
+	void stop();
 
 private:
 	void read();
 	
-	bool receiving = true;
+	std::atomic<bool> receiving = true;
 
 	std::string m_buffer;
 	SOCKET m_clientSocket;

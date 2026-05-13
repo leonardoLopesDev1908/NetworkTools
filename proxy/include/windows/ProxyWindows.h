@@ -16,19 +16,19 @@
 #include <atomic>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
 class ProxyWindows
 {
-	SOCKET m_socket = INVALID_SOCKET;
-	WSADATA wsaData{};
-
-	std::string m_host;
-	std::string m_port;
+public:
+	std::string* m_host = nullptr;
+	std::string* m_port = nullptr;
+	std::atomic<bool> proxyRun = false;
 
 public:
-	ProxyWindows(std::string host, std::string port);
+	ProxyWindows(std::string* host, std::string* port);
 	~ProxyWindows();
 
 	void create();
@@ -36,12 +36,16 @@ public:
 	void stop();
 	void keep();
 	void closeSocket();
-
 	QueueMessage& getQueue();
+	void error(const std::string& errorMessage);
 
 private:
-	std::atomic<bool> proxyRun = false;
-	std::atomic<bool> keepMessage = false;
+	SOCKET m_socket = INVALID_SOCKET;
+	WSADATA wsaData{};
+
+	std::atomic<bool> keepMessage = false;	
+	std::mutex m_handlersMutex;
+	std::vector <std::shared_ptr<CHandlerWindows>> m_handlers;
 
 	ThreadPool m_conns;
 	QueueMessage m_messages;

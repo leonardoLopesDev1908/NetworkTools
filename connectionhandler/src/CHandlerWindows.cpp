@@ -9,8 +9,7 @@ CHandlerWindows::CHandlerWindows(SOCKET client, QueueMessage& messages)
 
 CHandlerWindows::~CHandlerWindows()
 {
-	if(m_clientSocket != INVALID_SOCKET)
-		closesocket(m_clientSocket);
+	stop();
 }
 
 void CHandlerWindows::start()
@@ -64,10 +63,33 @@ void CHandlerWindows::read()
 	else
 		direction = Direction::Outbound;
 
-	m_messages.tryPush(m_parser.parse(m_buffer, direction));
+	m_messages.tryPush(std::move(m_parser.parse(m_buffer, direction)));
+
+	if (direction == Direction::Inbound)
+	{
+		size_t startServerOrigin = firstLine.find("/");
+		std::string destiny = firstLine.substr(
+			startServerOrigin,
+			firstLine.find("HTTP") - startServerOrigin 
+		);
+		forward(destiny);
+	}
 }
 
-void CHandlerWindows::forward()
+void CHandlerWindows::forward(std::string destiny)
 {
-	
+	size_t sentBytes = 0;
+	while (sentBytes < destiny.size())
+	{
+		int bytes = send(m_clientSocket, destiny.c_str(), sizeof(destiny), 0);
+		sentBytes += bytes;
+	}
+}
+
+void CHandlerWindows::stop()
+{
+	receiving = false;
+	SOCKET s = std::exchange(m_clientSocket, INVALID_SOCKET);
+	if (s != INVALID_SOCKET)
+		closesocket(s);
 }

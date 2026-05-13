@@ -10,7 +10,6 @@ ThreadPool::ThreadPool(std::size_t numThreads)
                 std::function<void()> task;
                 {
                     std::unique_lock<std::mutex> lck(m_mutex);
-
                     m_cond.wait(lck, [&]{ return !m_taskQueue.empty() || m_stop;});
 
                     if(m_stop && m_taskQueue.empty())
@@ -27,14 +26,13 @@ ThreadPool::ThreadPool(std::size_t numThreads)
 
 ThreadPool::~ThreadPool()
 {
-    {
-        std::unique_lock<std::mutex>lck (m_mutex);
-        m_stop = true;
-    }
-    m_cond.notify_all();
+    stop();
 
-    for(auto& t : m_pool)
-        t.join();
+    for (auto& t : m_pool)
+    {
+        if(t.joinable())
+            t.join();
+    }
 }
 
 void ThreadPool::enqueue(std::function<void()> task)
@@ -47,3 +45,11 @@ void ThreadPool::enqueue(std::function<void()> task)
     m_cond.notify_one();
 }
 
+void ThreadPool::stop()
+{
+    {
+        std::unique_lock<std::mutex>lck(m_mutex);
+        m_stop = true;
+    }
+    m_cond.notify_all();
+}

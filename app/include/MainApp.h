@@ -19,10 +19,10 @@
 
 using namespace ftxui;
 
-class ProxyApp 
+class MainApp 
 {
 public:    
-    ~ProxyApp();
+    ~MainApp();
     void start();
     ftxui::Element manual_page();
     ftxui::Element input_endpoint_page();

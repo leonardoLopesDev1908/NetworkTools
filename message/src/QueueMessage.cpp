@@ -9,7 +9,8 @@ void QueueMessage::tryPush(Message&& msg)
 {
     {
         std::unique_lock<std::mutex> lck(m_queueMutex);
-        m_messages.push_back(msg);
+        std::cout << "[Info]: Message receivedn\n";
+        m_messages.push_back(std::move(msg));
     }
 
     if (m_screen)

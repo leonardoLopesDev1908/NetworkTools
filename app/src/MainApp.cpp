@@ -1,10 +1,10 @@
-#include "ProxyApp.h"
+#include "MainApp.h"
 
 #include <format>
 
 using namespace ftxui;
 
-ProxyApp::~ProxyApp()
+MainApp::~MainApp()
 {
     if (m_proxy)
         m_proxy->stop();
@@ -13,7 +13,7 @@ ProxyApp::~ProxyApp()
         proxyThread.join();
 }
 
-ftxui::Element ProxyApp::manual_page()
+ftxui::Element MainApp::manual_page()
 {
     switch (optionsState.selectedLanguage)
     {
@@ -120,7 +120,7 @@ ftxui::Element ProxyApp::manual_page()
     }
 }
 
-ftxui::Element ProxyApp::input_endpoint_page()
+ftxui::Element MainApp::input_endpoint_page()
 {
     auto errorElement = m_submitError.empty()
         ? text("")
@@ -146,7 +146,7 @@ ftxui::Element ProxyApp::input_endpoint_page()
     }) | border;
 }
 
-ftxui::Element ProxyApp::messages_menu_page()
+ftxui::Element MainApp::messages_menu_page()
 {
     if (endpointState.host == "" &&
         endpointState.port == "")
@@ -157,11 +157,9 @@ ftxui::Element ProxyApp::messages_menu_page()
     auto messages = m_proxy->getQueue().snapshot();
 
     if (messages.empty())
-    {
         return text("Queue is empty.");
-    }
 
-    //messagesState.m_messageEntries.clear();
+    messagesState.m_messageEntries.clear();
     for (auto it = messages.begin(); it != messages.end(); it++)
     {
         std::string entry;
@@ -180,8 +178,19 @@ ftxui::Element ProxyApp::messages_menu_page()
         messagesState.m_messageEntries.push_back(entry);
     }
 
-    //Implementar variacao com linguagem
-    Element detail = text("Select a message") | center;
+    Element detail;
+    switch (optionsState.selectedLanguage)
+    {
+    case 1:
+        detail = text("Selecione uma mensagem") | center;
+        break;
+    case 2:
+        detail = text("Selecione una mensage") | center;
+        break;
+    default:
+        detail = text("Select a message") | center;
+        break;
+    }
 
     if (messagesState.selectedMessage >= 0 &&
         messagesState.selectedMessage < messages.size())
@@ -200,26 +209,21 @@ ftxui::Element ProxyApp::messages_menu_page()
             text("Body: ") | bold,
             paragraph(msg.body)
             });
-
-        return vbox({
-            hbox({
-                text(" #      ") | bold,
-                text(" Method ") | bold,
-                text(" Path/Status   ") | bold,
-            }) | color(Color::Blue),
-            separator(),
-            messages_container->Render() | flex,
-            separator(),
-            detail | flex,
-            }) | border;
     }
-    else
-    {
-        return text("Invalid index.");
-    }
+    return vbox({
+           hbox({
+               text(" #      ") | bold,
+               text(" Method ") | bold,
+               text(" Path/Status   ") | bold,
+           }) | color(Color::Blue),
+           separator(),
+           messages_container->Render() | flex,
+           separator(),
+           detail | flex,
+        }) | border;
 }
 
-ftxui::Element ProxyApp::options_page()
+ftxui::Element MainApp::options_page()
 {
     std::string selected_name = optionsState.languages[optionsState.selectedLanguage];
 
@@ -230,7 +234,7 @@ ftxui::Element ProxyApp::options_page()
     }) | border;
 }
 
-void ProxyApp::start() {
+void MainApp::start() {
 
     auto screen = ftxui::ScreenInteractive::Fullscreen();
 
@@ -270,9 +274,9 @@ void ProxyApp::start() {
         }
 
         #ifdef _WIN32
-            m_proxy = std::make_shared<ProxyWindows>(endpointState.host, endpointState.port);
+            m_proxy = std::make_shared<ProxyWindows>(&endpointState.host, &endpointState.port);
         #elif __linux__
-            m_proxy = std::make_shared<ProxyLinux>(endpointState.host, endpointState.port);
+            m_proxy = std::make_shared<ProxyLinux>(&endpointState.host, &endpointState.port);
         #endif
         proxyThread = std::thread([p = m_proxy, &error = m_submitError, &screen] {
             try {
@@ -334,6 +338,9 @@ void ProxyApp::start() {
             body = options_page();
             break;  
         case 4:
+            if (m_proxy->proxyRun)
+                m_proxy->proxyRun = false;
+            m_proxy->stop();
             screen.ExitLoopClosure()();
             break;
         }
@@ -369,6 +376,9 @@ void ProxyApp::start() {
                     options_container->SetActiveChild(radio);
                     return true;
                 case 4:
+                    if (m_proxy->proxyRun)
+                        m_proxy->proxyRun = false;
+                    m_proxy->stop();
                     screen.ExitLoopClosure()();
                     return true;
                 default:

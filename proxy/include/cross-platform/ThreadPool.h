@@ -15,6 +15,7 @@ public:
     ThreadPool(std::size_t numThreads = std::thread::hardware_concurrency());
     ~ThreadPool();   
     void enqueue(std::function<void()> task);
+    void stop();
 
 private:
     bool m_stop = false;

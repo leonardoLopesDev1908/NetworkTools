@@ -1,6 +1,10 @@
 #ifndef PROXY_LINUX_H
 #define PROXY_LINUX_H
 
+#include "CHandlerLinux.h"
+#include "QueueMessage.h"
+#include "ThreadPool.h"
+
 #include <atomic>
 #include <cstring>
 #include <iostream>
@@ -19,20 +23,20 @@ class ProxyLinux
 
 public:
     
-    ProxyLinux(std::string host, std::string port,
-            std::vector<std::unique_ptr<CHandlerLinux>>& conns);    
-    ProxyLinux(const ProxyLinux& copy) = delete;
-    ProxyLinux(ProxyLinux&& move) = delete;
-
-    int create();
-    int start();
+    ProxyLinux(std::string host, std::string port);    
+    ~ProxyLinux();    
+    void create();
+    void start();
     void stop();
+    QueueMessage& getQueue();
 
 private:
-   
-    std::vector<std::unique_ptr<CHandlerLinux>>& m_conns;    
-
     struct addrinfo hints, * result = nullptr;
     std::atomic<bool> proxyRun = false;
+    
+    std::mutex m_mutexHandlers;
+    std::vector<std::shared_ptr<CHandlerLinux>> m_handlers;
+    QueueMessage m_messages;
+    ThreadPool m_conns;
 };
 #endif

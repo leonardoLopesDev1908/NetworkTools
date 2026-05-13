@@ -1,32 +1,35 @@
 #ifndef CHANDLER_LINUX_H
 #define CHANDLER_LINUX_H
 
+#include "HttpParser.h"
+#include "QueueMessage.h"
+
+#include <atomic>
 #include <iostream>
 #include <queue>
-
-class HttpParser;
 
 class CHandlerLinux
 {
 public:
 
-	CHandlerLinux(int connection);
-
-	void read();
-
-	Message parser(std::string_view data);
-
+	CHandlerLinux(int connection, QueueMessage& m_messages);
+    ~CHandlerLinux();
+    void start();
     //no edit for now
 	//void edit();
+	void forward(Direction direction);
+    void stop();
 
-	void forward();
+private: 
+    void read();
 
 private:
     std::string m_buffer;
 	int m_clientSocket;
+    std::atomic<bool> receiving = true;
 
 	HttpParser m_parser;
-	std::queue<Message> m_messages;
+	QueueMessage& m_messages;
 };
 
 #endif

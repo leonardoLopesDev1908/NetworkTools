@@ -1,19 +1,24 @@
 #include "ProxyLinux.h"
 
-ProxyLinux::ProxyLinux(std::string host, std::string port, 
-        std::vector<std::unique_ptr<CHandlerLinux>>& conns)
-    : m_conns(conns), m_host(host), m_port(port)
+#include <memory>
+
+ProxyLinux::ProxyLinux(std::string host, std::string port) 
+    : m_host(host), m_port(port)
 {
 }
 
-int ProxyLinux::create()
+ProxyLinux::~ProxyLinux()
+{
+    stop();
+}
+
+void ProxyLinux::create()
 {
     m_socket = socket(AF_INET, SOCK_STREAM, 0);    
 
-    if(m_socket != 0)
+    if(m_socket < 0)
     {
-        printf("[Error] socket\n");
-        return 1;
+        throw std::runtime_error("[Error] invalid socket\n");
     }
 
     memset(&hints, 0, sizeof(hints));
@@ -22,32 +27,27 @@ int ProxyLinux::create()
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    if (getaddrinfo(m_host.c_str(), m_port.c_str(), &hints, &result)
-        != 0) {
-        std::cout << "Erro no getaddrinfo" << std::endl;
-        close(m_socket);
-        return 1;
+    if (getaddrinfo(m_host.c_str(), m_port.c_str(), &hints, &result) < 0) {
+        freeaddrinfo(result);
+        throw std::runtime_error("[Error] getaddrinfo\n");
     }
 
-    if (bind(m_socket, result->ai_addr,
-        (int)result->ai_addrlen)) {
-        std::cout << "Erro no bind" << std::endl;
-        close(m_socket);
-        return 1;
+    if (bind(m_socket, result->ai_addr, (int)result->ai_addrlen) < 0) {
+        freeaddrinfo(result);
+        throw std::runtime_error("[Error]: binding socket\n");
     }
 
-    return 0;
+    freeaddrinfo(result);
 }
 
-int ProxyLinux::start()
+void ProxyLinux::start()
 {
-    if(create() == 1)
-    {
-        //throw error
-        return 1;
-    }
+    create();
 
-    listen(m_socket, 5);
+    if(listen(m_socket, 5) < 0)
+    {
+        throw std::runtime_error("[Error] listening...\n");
+    }
 
     proxyRun = true;
     
@@ -55,10 +55,10 @@ int ProxyLinux::start()
     {
         int clientSocket;
 
-        if((clientSocket = accept(m_socket, result->ai_addr, &result->ai_addrlen)) != 0)
+        if((clientSocket = accept(m_socket, NULL, NULL)) < 0)
         {
-            std::cerr << "[Error] accepting connection\n";
-            continue;
+            if(!proxyRun) break;
+            throw std::runtime_error("[Error] accepting connection\n");
         }
 
         //if(keepMessages)
@@ -67,12 +67,34 @@ int ProxyLinux::start()
            
         //} else
         
-        CHandlerLinux newConn(clientSocket);
+        auto newConn = std::make_shared<CHandlerLinux>(clientSocket, m_messages);
     
-        //Thred Pool para handlers 
-        std::thread t(newConn->start());
-        m_conns.push_back(newConn);
+        m_conns.enqueue([c = newConn]{
+            c->start();
+        });
+
+        m_handlers.push_back(newConn);
+    }
+}
+
+void ProxyLinux::stop()
+{
+    proxyRun = false;
+    
+    int s = std::exchange(m_socket, -1);
+    if(s != -1)
+        close(s);
+
+    {
+        std::lock_guard<std::mutex> lck(m_mutexHandlers);
+        for(auto& h : m_handlers)
+            h->stop(); 
     }
 
-    return 0; 
+    //m_poll.stop();
+}
+
+QueueMessage& ProxyLinux::getQueue()
+{
+    return m_messages;
 }

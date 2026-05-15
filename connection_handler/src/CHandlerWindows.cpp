@@ -22,7 +22,6 @@ void CHandlerWindows::start()
 void CHandlerWindows::read()
 {
 	char temp[4096];
-	Direction direction;
 	size_t headerEnd = std::string::npos;
 
 	while (headerEnd == std::string::npos)
@@ -40,7 +39,10 @@ void CHandlerWindows::read()
 	size_t pos = m_requestBuf.find("Content-Length: ");
 	if (pos != std::string::npos)
 	{
-		int length = std::stoi(m_requestBuf.substr(pos + 16, m_requestBuf.find("\r\n", pos)));
+		int length = std::stoi(m_requestBuf.substr(
+                    pos + 16, m_requestBuf.find("\r\n", pos) - pos
+        ));
+
 		size_t bodyStart = headerEnd + 4;
 		size_t currentBodySize = m_requestBuf.size() - bodyStart;
 
@@ -59,26 +61,20 @@ void CHandlerWindows::read()
 
 	std::string firstLine = m_requestBuf.substr(0, m_requestBuf.find("\r\n"));
 
-	if (firstLine.find("HTTP") > 0)
-		direction = Direction::Inbound;
-	else
-		direction = Direction::Outbound;
+	Message msg = m_parser.parse(m_requestBuf, Direction::Inbound);
+	
+    std::string destiny = msg.headers["Host"];
+    bool closeClientSocket = false;
 
-	Message msg = m_parser.parse(m_requestBuf, direction);
-	std::string destiny;
+    if(msg.headers["Connection"] == "close")
+        closeClientSocket = true;
 
-	if (direction == Direction::Inbound)
-	{
-		destiny = msg.headers["Host"];
-		forwardInbound(destiny);
-	}
-	else
-		forwardOutbound();
+	forwardInbound(destiny, closeClientSocket);
 
 	m_messages.tryPush(std::move(msg));
 }
 
-void CHandlerWindows::forwardInbound(std::string destiny)
+void CHandlerWindows::forwardInbound(std::string destiny, bool closeClientSocket)
 {
 	size_t sentBytes = 0;
 	remoteSocket(destiny);
@@ -91,27 +87,40 @@ void CHandlerWindows::forwardInbound(std::string destiny)
 
 	m_requestBuf.clear();
 
+    forwardOutbound(closeClientSocket);
+}
+
+void CHandlerWindows::forwardOutbound(bool closeClientSocket)
+{
 	char response[4096];
 	size_t receivedBytes;
 	while (true)
 	{
 		int bytes = recv(m_forwardSocket, response, sizeof(response), 0);
 		if (bytes <= 0) break;
-
-		m_requestBuf.append(response, bytes);
+		m_responseBuf.append(response, bytes);
 	}
 
-	forwardOutbound();
-}
-
-void CHandlerWindows::forwardOutbound()
-{
-	size_t sentBytes = 0;
+    size_t sentBytes = 0;
 	while (sentBytes < m_responseBuf.size())
 	{
 		int bytes = send(m_clientSocket, m_responseBuf.c_str(), m_responseBuf.size(), 0);
-		sentBytes += bytes;
+		if(bytes <= 0) break;
+
+        sentBytes += bytes;
 	}
+
+    Message msg = m_parser.pse(m_responseBuf, Direction::Outbound);
+
+    if(msg.headers["Connection"] == "close")
+        closesocket(m_forwardSocket);
+    
+    if(closeClientSocket)
+    {
+        receiving = false;
+    }
+
+    m_messages.tryPush(std::move(msg));
 
 	m_responseBuf.clear();
 }
@@ -127,20 +136,20 @@ void CHandlerWindows::remoteSocket(const std::string& hostDestiny)
 
 	if (getaddrinfo(hostDestiny.c_str(), m_port.c_str(), &hints, &result) != 0)
 	{
-		throw new std::runtime_error("[Error]: getaddrinfo forward socket\n");
+		throw std::runtime_error("[Error]: getaddrinfo forward socket\n");
 	}
 
-	m_forwardSocket = socket(result->ai_family, result->ai_socktype, (int)result->ai_addrlen);
+	m_forwardSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 	if (m_forwardSocket == INVALID_SOCKET)
 	{
 		freeaddrinfo(result);
-		throw new std::runtime_error("[Error]: socket forward socket\n");
+		throw std::runtime_error("[Error]: socket forward socket\n");
 	}
 
 	if (connect(m_forwardSocket, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR)
 	{
 		freeaddrinfo(result);
-		throw new std::runtime_error("[Error]: connect forward socket\n");
+		throw std::runtime_error("[Error]: connect forward socket\n");
 	}
 
 	freeaddrinfo(result);

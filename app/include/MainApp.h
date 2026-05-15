@@ -1,8 +1,4 @@
-#ifdef _WIN32
-#include "ProxyWindows.h"
-#elif __linux__
-#include "ProxyLinux.h"
-#endif
+#include "Proxy.h"
 
 #include "ftxui/component/component.hpp"
 #include <ftxui/component/screen_interactive.hpp>
@@ -66,6 +62,7 @@ private:
     ftxui::Component inputHost;
     ftxui::Component inputPort;
     ftxui::Component btnSubmit;
+    ftxui::Component btnEndProxy;
 
     ftxui::Component main_container;
     ftxui::Component input_container;
@@ -73,11 +70,6 @@ private:
     ftxui::Component messages_container;
     ftxui::Component options_container;
 
-#ifdef _WIN32
-    std::shared_ptr<ProxyWindows> m_proxy;
-#elif __linux__
-    std::shared_ptr<ProxyLinux> m_proxy;
-#endif
-
+    std::shared_ptr<Proxy> m_proxy;
     std::thread proxyThread;
 };

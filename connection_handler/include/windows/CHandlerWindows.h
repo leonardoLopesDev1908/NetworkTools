@@ -24,7 +24,7 @@ public:
 	void start();
 	//void edit();
 	void forwardInbound(std::string destiny);
-	void forwardOutbound();
+	void forwardOutbound(bool closeClientSocket);
 	void closeSocket();
 	void stop();
 

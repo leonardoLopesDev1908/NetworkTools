@@ -10,13 +10,13 @@
 
 Message HttpParser::parse(std::string& raw, Direction direction)
 {
-    std::ofstream logFile("C:\\Users\\teste\\Desktop\\logfile.txt", std::ios::app);
-    if (logFile.is_open())
-    {
-        logFile << "Raw message\n";
-        logFile << raw;
-        logFile << "\n";
-    }
+    //std::ofstream logFile("C:\\Users\\teste\\Desktop\\logfile.txt", std::ios::app);
+    //if (logFile.is_open())
+    //{
+    //    logFile << "Raw message\n";
+    //    logFile << raw;
+    //    logFile << "\n";
+    //}
 
     Message msg{};
     msg.direction = direction;
@@ -108,10 +108,16 @@ size_t HttpParser::parseHeaders(std::string& raw, size_t start,
     return end + 2;
 }
 
+//The rules for determining when a message body is present in an HTTP/1.1 message differ for requests and responses.
+
+//The presence of a message body in a request is signaled by a Content-Length or Transfer-Encoding header field. Request message framing is independent of method semantics.
+
 std::string HttpParser::parseBody(std::string& raw, size_t start, std::string len)
 {
     size_t size;
-    sscanf_s(len.c_str(), "%zu", &size);
+    
+    std::istringstream iss(len);
+    iss >> size;
     
     std::string body(raw.data(), start, size);
 

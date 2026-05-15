@@ -6,10 +6,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(app)
-add_subdirectory(proxy)
-add_subdirectory(connectionhandler)
+add_subdirectory(common_utilities)
+add_subdirectory(connection_handler)
 add_subdirectory(httpparser)
 add_subdirectory(message)
+add_subdirectory(proxy)
 
 add_executable(ProxyInterceptor Main.cpp)
 

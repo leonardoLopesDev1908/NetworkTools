@@ -94,11 +94,6 @@ void ProxyWindows::start()
 	}
 }
 
-void ProxyWindows::keep()
-{
-	keepMessage = (keepMessage == false) ? true : false;
-}
-
 void ProxyWindows::stop()
 {
 	m_messages.setScreen(nullptr);

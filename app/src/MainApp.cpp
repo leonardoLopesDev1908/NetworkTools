@@ -125,7 +125,14 @@ ftxui::Element MainApp::input_endpoint_page()
     auto errorElement = m_submitError.empty()
         ? text("")
         : text(m_submitError) | color(Color::Red) | bold;
+    
 
+    ftxui::Element endProxyElement = text("") | bold; 
+
+    if(m_proxy && m_proxy->isRunning())
+        endProxyElement = btnEndProxy->Render(); 
+
+    
     return vbox({
         text("Endpoint Configuration") | bold,
         separator(),
@@ -141,6 +148,7 @@ ftxui::Element MainApp::input_endpoint_page()
         separator(),
         errorElement,
         btnSubmit->Render(),
+        endProxyElement,
         separator(),
         text("Esc to comeback to menu") | color(Color::GrayLight) | italic,
     }) | border;
@@ -273,30 +281,51 @@ void MainApp::start() {
             return;
         }
 
-        #ifdef _WIN32
-            m_proxy = std::make_shared<ProxyWindows>(&endpointState.host, &endpointState.port);
-        #elif __linux__
-            m_proxy = std::make_shared<ProxyLinux>(&endpointState.host, &endpointState.port);
-        #endif
+
+        if (m_proxy && m_proxy->isRunning())
+        {
+            m_submitError = "There is already a proxy running\n";
+            return;
+        }
+
+        if(proxyThread.joinable())
+            proxyThread.join();
+
+        m_proxy = std::make_shared<Proxy>(&endpointState.host, &endpointState.port,
+                        &m_submitError, &screen);
+        
         proxyThread = std::thread([p = m_proxy, &error = m_submitError, &screen] {
-            try {
+            try 
+            {
                 p->start();
             }
             catch (std::exception& e)
             {
                 error = e.what();
-                screen.PostEvent(ftxui::Event::Custom); 
+                screen.PostEvent(ftxui::Event::Custom);
+                p->stop();
             }
         });
+        
         m_proxy->getQueue().setScreen(&screen);
     };
     
     btnSubmit = Button("Launch proxy", submitEndpoint, ButtonOption::Animated());
 
+    auto endProxy = [&]{
+        if(m_proxy)
+            m_proxy->stop();
+        if(proxyThread.joinable())
+            proxyThread.join();
+    };
+
+    btnEndProxy = Button("End current proxy", endProxy, ButtonOption::Animated());
+    
     input_container = Container::Vertical({
         inputHost,
         inputPort,
-        btnSubmit
+        btnSubmit,
+        btnEndProxy
     });
 
     //Message selection
@@ -338,9 +367,10 @@ void MainApp::start() {
             body = options_page();
             break;  
         case 4:
-            if (m_proxy->proxyRun)
-                m_proxy->proxyRun = false;
-            m_proxy->stop();
+            if (m_proxy)
+                m_proxy->stop();
+            if (proxyThread.joinable())
+                proxyThread.join();
             screen.ExitLoopClosure()();
             break;
         }
@@ -376,9 +406,8 @@ void MainApp::start() {
                     options_container->SetActiveChild(radio);
                     return true;
                 case 4:
-                    if (m_proxy->proxyRun)
-                        m_proxy->proxyRun = false;
-                    m_proxy->stop();
+                    if (m_proxy)
+                        m_proxy->stop();
                     screen.ExitLoopClosure()();
                     return true;
                 default:

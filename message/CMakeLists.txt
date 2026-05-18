@@ -7,7 +7,9 @@ FetchContent_Declare(ftxui
  
 FetchContent_MakeAvailable(ftxui)
 
-add_library(Message STATIC ${CMAKE_CURRENT_SOURCE_DIR}/src/QueueMessage.cpp)
+file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+
+add_library(Message STATIC ${SOURCES})
 
 target_include_directories(Message PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

@@ -1,6 +1,11 @@
 #ifndef COMMON_UTILITIES_H
 #define COMMON_UTILITIES_H
 
+#include <expected>
+#include <iostream>
+
+#define NOMINMAX
+
 #ifdef _WIN32
     //NOLINTBEGIN(llvm-include-order)
     #include <WinSock2.h>  
@@ -11,11 +16,12 @@
     using SocketType = SOCKET;
     constexpr SocketType INVALID_S = INVALID_SOCKET;
 
-    inline void platformInit()
+    inline std::expected<void, std::string> platformInit()
     {
 	    WSADATA wsaData{};
 	    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-		    throw  std::runtime_error("[Error] start\n");
+		    return std::unexpected("[Error] start\n");
+        return {};
     }
 
     inline void platformCleanup() { WSACleanup(); }

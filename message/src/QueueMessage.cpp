@@ -9,10 +9,8 @@ void QueueMessage::push(Message msg)
 
 void QueueMessage::tryPush(Message&& msg)
 {
-    std::cout << "[Info]: Message received at queue\n";
     {
         std::unique_lock<std::mutex> lck(m_queueMutex);
-        std::cout << "[Info]: Message receivedn\n";
         m_messages.push_back(std::move(msg));
     }
 

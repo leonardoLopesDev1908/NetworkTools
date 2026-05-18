@@ -156,14 +156,13 @@ ftxui::Element MainApp::input_endpoint_page()
 
 ftxui::Element MainApp::messages_menu_page()
 {
-    if (endpointState.host == "" &&
-        endpointState.port == "")
+    if (!m_proxy)
     {
         return text("Enter a endpoint at page 2");
     }
 
     auto messages = m_proxy->getQueue().snapshot();
-
+    
     if (messages.empty())
         return text("Queue is empty.");
 
@@ -221,7 +220,7 @@ ftxui::Element MainApp::messages_menu_page()
     return vbox({
            hbox({
                text(" #      ") | bold,
-               text(" Method ") | bold,
+               text(" Method/Code ") | bold,
                text(" Path/Status   ") | bold,
            }) | color(Color::Blue),
            separator(),
@@ -254,10 +253,31 @@ void MainApp::start() {
             }) | border;
 
     //Menu 
-    std::vector<std::string> pages = {
-        "[1] Manual;", "[2] Enter/Change endpoint;", "[3] Messages menu;",
-        "[4] Options;","[5] Exit;"
+    std::vector<std::string> pages;
+    switch (optionsState.selectedLanguage) 
+    {
+    case 1:
+        pages = {
+        "[1] Manual;", "[2] Selecione endpoint;", "[3] Menu de mensagens;",
+        "[4] Opcoes;","[5] Fechar;"
+        };
+        break;
+
+    case 2:
+        pages = {
+       "[1] Manual;", "[2] Seleccionar endpoint;", "[3] Menu de mensajes;",
+       "[4] Opciones;","[5] Cerrar;"
+        };
+        break;
+    default:
+        pages = {
+            "[1] Manual;", "[2] Enter/Change endpoint;", "[3] Messages menu;",
+            "[4] Options;","[5] Exit;"
+        };
+        break;
     };
+
+
     menu = Menu({
          &pages,
          &selected,
@@ -281,7 +301,6 @@ void MainApp::start() {
             return;
         }
 
-
         if (m_proxy && m_proxy->isRunning())
         {
             m_submitError = "There is already a proxy running\n";
@@ -292,21 +311,18 @@ void MainApp::start() {
             proxyThread.join();
 
         m_proxy = std::make_shared<Proxy>(&endpointState.host, &endpointState.port,
-                        &m_submitError, &screen);
+                        &m_submitError);
         
         proxyThread = std::thread([p = m_proxy, &error = m_submitError, &screen] {
-            try 
+            auto result = p->start();
+            
+            if(!result)
             {
-                p->start();
-            }
-            catch (std::exception& e)
-            {
-                error = e.what();
+                error = result.error();
                 screen.PostEvent(ftxui::Event::Custom);
-                p->stop();
             }
         });
-        
+        m_proxy->getErrors().setScreen(&screen);
         m_proxy->getQueue().setScreen(&screen);
     };
     

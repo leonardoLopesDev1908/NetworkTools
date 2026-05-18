@@ -2,6 +2,7 @@
 #define THREAD_POOL_H
 
 #include <condition_variable>
+#include <expected>
 #include <functional>
 #include <mutex>
 #include <queue>
@@ -13,7 +14,8 @@ class ThreadPool
 {
 public:
     ThreadPool(std::size_t numThreads = std::thread::hardware_concurrency());
-    ~ThreadPool();   
+    ~ThreadPool();  
+
     void enqueue(std::function<void()> task);
     void stop();
 

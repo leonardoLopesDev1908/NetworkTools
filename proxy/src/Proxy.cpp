@@ -3,13 +3,9 @@
 #include <cstring>
 #include <utility>
 
-SocketType iCheck = INVALID_S;
-
-
 Proxy::Proxy(std::string* host, std::string* port, 
-        std::string* errorMessage, ftxui::ScreenInteractive* screen)
-	: m_host(host), m_port(port), m_errorMessage(errorMessage),
-    m_screen(screen)
+        std::string* errorMessage)
+	: m_host(host), m_port(port), m_errorMessage(errorMessage)
 {	
 }
 
@@ -18,8 +14,12 @@ Proxy::~Proxy()
 	stop();
 }
 
-void Proxy::create()
+std::expected<void, std::string> Proxy::create()
 {
+	auto initResultinitResult = platformInit();
+	if (!initResultinitResult)
+		return initResultinitResult;
+	
 	struct addrinfo* result = nullptr;
 	struct addrinfo hints;
 
@@ -38,7 +38,7 @@ void Proxy::create()
 
 	if (iResult != 0)
 	{
-		error("[Error] getaddrinfo: " + std::to_string(iResult));
+		return std::unexpected("[Error] getaddrinfo: " + std::to_string(iResult));
 	}
 
 	m_socket = INVALID_S;
@@ -47,7 +47,7 @@ void Proxy::create()
 	if (m_socket == INVALID_S)
 	{
 		freeaddrinfo(result);
-		error("[Error] invalid socket\n");
+		return std::unexpected("[Error] invalid socket\n");
 	}
 
     iCheck = bind(m_socket, result->ai_addr, (int)result->ai_addrlen);
@@ -55,22 +55,29 @@ void Proxy::create()
     if (isSocketError(iCheck))
 	{
 		freeaddrinfo(result);
-		error("[Error] binding socket\n");
+		return std::unexpected("[Error] binding socket\n");
 	}
 
 	if (result != nullptr)
 		freeaddrinfo(result);
+
+	return {};
 }
 
-void Proxy::start()
+std::expected<void, std::string> Proxy::start()
 {
-	create();
+	auto result = create();
+
+	if (!result)
+	{
+		return result;
+	}
 
     iCheck = listen(m_socket, 5);
 
 	if (isSocketError(iCheck))
 	{
-		error("[Error] listening socket\n");
+		return std::unexpected("[Error] listening socket\n");
 	}
 
 	proxyRun = true;
@@ -80,7 +87,8 @@ void Proxy::start()
 		SocketType clientSocket = INVALID_S;
 		if ((clientSocket = accept(m_socket, NULL, NULL)) == INVALID_S)
 		{
-			error("[Error] accepting socket");
+			if (!proxyRun) return {};
+			return std::unexpected("[Error] accepting socket");
 		}
 
 		//if (keepMessage)
@@ -93,23 +101,19 @@ void Proxy::start()
 		//SOCKET forwardSocket = createSocket();
 		//Pass
 
+		auto newConn = std::make_shared<CHandler>(std::move(clientSocket), m_messages,
+                 m_errorQueue);
+		{
+			std::lock_guard<std::mutex> lck(m_handlersMutex);
+			m_handlers.push_back(newConn);
+		}
 
-		auto newConn = std::make_shared<CHandler>(std::move(clientSocket), m_messages, m_port,
-                 m_errorMessage, m_screen);
-		 {
-		 	std::lock_guard<std::mutex> lck(m_handlersMutex);
-		 	m_handlers.push_back(newConn);
-		 }
-		 m_conns.enqueue([conn = newConn, this](){
-		 	try{
-		 		conn->start();
-		 	}catch(const std::exception& e)
-		 	{
-		 		std::cerr << e.what() << std::endl;
-		 		stop();
-		 	}
-		 });
+		m_conns.enqueue([conn = newConn, this](){
+			conn->start();
+		});
 	}
+
+	return {};
 }
 
 void Proxy::stop()
@@ -137,12 +141,9 @@ QueueMessage& Proxy::getQueue()
 	return m_messages;
 }
 
-void Proxy::error(const std::string& errorMessage)
+ErrorQueue& Proxy::getErrors()
 {
-	m_host->clear();
-	m_port->clear();
-	stop();
-	throw std::runtime_error(errorMessage);
+	return m_errorQueue;
 }
 
 bool Proxy::isRunning() const

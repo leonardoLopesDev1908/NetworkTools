@@ -37,14 +37,14 @@ public:
 	Queue<std::string>& getErrors();
 	
     bool isRunning() const;
-	void turnKeepMessages(bool* keepFlag);
+    void setKeep(bool keepFlag); 
 
 private:
 	SocketType m_socket = INVALID_S;
 	SocketType iCheck = INVALID_S;
 
 	bool proxyRun = false;
-	bool* m_keepMessages = nullptr;	
+    std::atomic<bool> m_keepMessages = nullptr;	
 	std::mutex m_handlersMutex;
 	
 	std::vector <std::shared_ptr<CHandler>> m_handlers;

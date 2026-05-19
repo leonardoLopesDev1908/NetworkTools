@@ -4,7 +4,7 @@
 #include <utility>
 
 Proxy::Proxy(std::string* host, std::string* port, 
-        std::string* errorMessage)
+    std::string* errorMessage, bool* keepFlag)
 	: m_host(host), m_port(port), m_errorMessage(errorMessage)
 {	
 }
@@ -16,10 +16,13 @@ Proxy::~Proxy()
 
 std::expected<void, std::string> Proxy::create()
 {
-	auto initResultinitResult = platformInit();
-	if (!initResultinitResult)
-		return initResultinitResult;
-	
+
+#ifdef _WIN32
+    auto initResult = platformInit();
+	if (!initResult)
+		return initResult;
+#endif
+
 	struct addrinfo* result = nullptr;
 	struct addrinfo hints;
 
@@ -91,16 +94,6 @@ std::expected<void, std::string> Proxy::start()
 			return std::unexpected("[Error] accepting socket");
 		}
 
-		//if (keepMessage)
-		//{
-			//asynchronous launch to edit message
-			// 
-			//ConnectionHandler newConn(client); 
-		//}
-		
-		//SOCKET forwardSocket = createSocket();
-		//Pass
-
 		auto newConn = std::make_shared<CHandler>(std::move(clientSocket), m_messages,
                  m_errorQueue, m_intercept);
 		{
@@ -151,7 +144,7 @@ bool Proxy::isRunning() const
     return proxyRun;
 }
 
-void Proxy::turnKeepMessages(bool* keepFlag)
+void Proxy::setKeep(bool keepFlag)
 {
 	m_keepMessages = keepFlag;
 	for (auto& c : m_handlers)

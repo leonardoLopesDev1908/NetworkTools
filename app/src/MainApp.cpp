@@ -2,8 +2,6 @@
 
 #include <format>
 
-using namespace ftxui;
-
 MainApp::~MainApp()
 {
     if (m_proxy)
@@ -161,19 +159,59 @@ ftxui::Element MainApp::messages_menu_page()
         return text("Enter a endpoint at page 2");
     }
 
-    auto messages = m_proxy->getQueue().snapshot();
-    
-    if (messages.empty())
-        return text("Queue is empty.");
+    if(optionsState.keepMessagesFlag)
+    {
+        auto* pending = m_proxy->m_intercept.pending();
+        if(!pending)
+            return text("Waiting a message...");
 
-    return optionsState.keepMessagesFlag ?
-        show_messages_menu(messages) :
-        edit_messages_menu(m_proxy->m_intercept.m_pending);
+        return edit_messages_menu(*pending);
+    }
+
+    auto messages = m_proxy->getQueue().snapshot();
+    if (messages.empty())
+        return text("Queue is empty.");    
+
+    return show_messages_menu(messages);
 }
 
 ftxui::Element MainApp::edit_messages_menu(Message& msg)
-{
+{   
+    if(editState.method.empty() && msg.isRequest())
+    {
+        editState.method = msg.request().method;
+        editState.path = msg.request().path;
+        editState.body = msg.body;
+    }
 
+    m_editMessage = msg;
+    if(msg.isRequest())
+    {
+        m_editMessage.request().method = editState.method;
+        m_editMessage.request().path = editState.path;
+    }
+    
+    m_editMessage.body = editState.body;
+
+    std::vector<Element> headerElements;
+    for (const auto& [key, value] : msg.headers)
+        headerElements.push_back(text(key + ": " + value));
+
+    return vbox({
+        text("Intercepted message") | bold | color(Color::Yellow),
+        separator(),
+        hbox({ text("Method: "), editState.inputMethod->Render() }),
+        hbox({ text("Path:   "), editState.inputPath->Render()   }),
+        separator(),
+        text("Headers:") | bold,
+        vbox(std::move(headerElements)),
+        separator(),
+        text("Body:") | bold,
+        editState.inputBody->Render(),
+        separator(),
+        btnForward->Render(),
+        text("Tab: navegar entre campos") | color(Color::GrayLight) | italic,
+    }) | border;
 }
 
 ftxui::Element MainApp::show_messages_menu(std::deque<Message> messages)
@@ -244,13 +282,6 @@ ftxui::Element MainApp::options_page()
 void MainApp::start() {
 
     auto screen = ftxui::ScreenInteractive::Fullscreen();
-
-    auto header =
-        hbox({
-            text(" ProxyInterceptor ") | color(Color::Blue),
-            filler(),
-            text(" @github: leonardoLopesDev1908 ")
-            }) | border;
 
     //Menu 
     std::vector<std::string> pages;
@@ -347,13 +378,25 @@ void MainApp::start() {
     //Message selection
     auto forwardMessage = [&]{
         m_proxy->m_intercept.resolve(m_editMessage);
+        editState.method.clear();
+        editState.path.clear();
+        editState.body.clear();
     };
 
     auto btnForward = Button("Forward message", forwardMessage, ButtonOption::Animated());
 
-    messages_container = Menu({
-        &messagesState.m_messageEntries,
-        &messagesState.selectedMessage,
+    editState.inputMethod = Input(&editState.method, "Method");
+    editState.inputPath = Input(&editState.path, "Path");
+    editState.inputBody = Input(&editState.body, "Body");
+
+    messages_container = Container::Vertical({
+        Menu({
+            &messagesState.m_messageEntries,
+            &messagesState.selectedMessage
+        }),
+        editState.inputMethod,
+        editState.inputPath,
+        editState.inputBody,
         btnForward
     });
 
@@ -374,6 +417,19 @@ void MainApp::start() {
     }, &activeTab);
 
     auto renderer = ftxui::Renderer(main_container, [&] {
+        auto status = optionsState.keepMessagesFlag
+        ? text("Keep: ON")  | color(Color::Green)
+        : text("Keep: OFF") | color(Color::Red);
+
+        auto header = hbox({
+            text(" ProxyInterceptor ") | color(Color::Blue),
+            filler(),
+            status,
+            filler(),
+            text(" @github: leonardoLopesDev1908 ")
+        }) | border;
+
+
         Element body;
         switch (activeTab)
         {

@@ -37,6 +37,16 @@ private:
         std::vector<std::string> m_messageEntries;
         int selectedMessage = 0;
     };
+    
+    struct EditState
+    {
+        std::string method;
+        std::string path;
+        std::string body;
+        ftxui::Component inputMethod;
+        ftxui::Component inputPath;
+        ftxui::Component inputBody;
+    };
 
     struct OptionsState
     {
@@ -61,6 +71,7 @@ private:
 
     InputEndpointState endpointState;
     MessagesMenuState messagesState;
+    EditState editState;
     OptionsState optionsState;
 
     ftxui::Component menu;

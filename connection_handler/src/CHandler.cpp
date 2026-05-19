@@ -6,11 +6,10 @@
 #include <utility>
 
 
-
-//Fix: Request has no response 
-
-CHandler::CHandler(SocketType&& clientSocket, QueueMessage& messages, ErrorQueue& errors)
-	: m_clientSocket(std::move(clientSocket)), m_messages(messages), m_errors(errors)
+CHandler::CHandler(SocketType&& clientSocket, Queue<Message>& messages, 
+					Queue<std::string>& errors, Intercept& intercept)
+	: m_clientSocket(std::move(clientSocket)), m_messages(messages), m_errors(errors), 
+	m_intercept(intercept)
 {
 }
 
@@ -26,7 +25,7 @@ void CHandler::start()
 		auto result = read();
 		if (!result)
 		{
-			m_errors.push(result.error());
+			m_errors.tryPush(std::move(result.error()));
 		}
 	}
 }
@@ -36,7 +35,6 @@ std::expected<void, std::string> CHandler::read()
 	char temp[4096];
 	size_t headerEnd = std::string::npos;
 
-	//Error
 	while (headerEnd == std::string::npos)
 	{
 		int bytes = recv(m_clientSocket, temp, sizeof(temp), 0);
@@ -75,7 +73,7 @@ std::expected<void, std::string> CHandler::read()
 	std::string firstLine = m_requestBuf.substr(0, m_requestBuf.find("\r\n"));
 
 	Message msg = m_parser.parse(m_requestBuf, Direction::Inbound);
-	
+
     std::string destiny = msg.headers["Host"];
 	std::string host = destiny;
 	std::string port = "80";
@@ -90,9 +88,14 @@ std::expected<void, std::string> CHandler::read()
 	bool closeClientSocket = false;
     if(msg.headers["Connection"] == "close")
         closeClientSocket = true;
+	
+	if (m_keep)
+	{
+		msg = m_intercept.wait(std::move(msg));
+	}
 
 	m_messages.tryPush(std::move(msg));
-
+	
 	auto result = forwardInbound(host, port, closeClientSocket);
 
 	if (!result)
@@ -218,4 +221,9 @@ void CHandler::stop()
 	SocketType f = std::exchange(m_forwardSocket, INVALID_S);
 	if (f != INVALID_S)
 		closeSocket(f);
+}
+
+void CHandler::turnKeep(bool flag)
+{
+	m_keep = flag;
 }

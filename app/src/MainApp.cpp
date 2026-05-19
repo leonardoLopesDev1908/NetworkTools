@@ -166,6 +166,18 @@ ftxui::Element MainApp::messages_menu_page()
     if (messages.empty())
         return text("Queue is empty.");
 
+    return optionsState.keepMessagesFlag ?
+        show_messages_menu(messages) :
+        edit_messages_menu(m_proxy->m_intercept.m_pending);
+}
+
+ftxui::Element MainApp::edit_messages_menu(Message& msg)
+{
+
+}
+
+ftxui::Element MainApp::show_messages_menu(std::deque<Message> messages)
+{
     messagesState.m_messageEntries.clear();
     for (auto it = messages.begin(); it != messages.end(); it++)
     {
@@ -186,18 +198,6 @@ ftxui::Element MainApp::messages_menu_page()
     }
 
     Element detail;
-    switch (optionsState.selectedLanguage)
-    {
-    case 1:
-        detail = text("Selecione uma mensagem") | center;
-        break;
-    case 2:
-        detail = text("Selecione una mensage") | center;
-        break;
-    default:
-        detail = text("Select a message") | center;
-        break;
-    }
 
     if (messagesState.selectedMessage >= 0 &&
         messagesState.selectedMessage < messages.size())
@@ -277,7 +277,6 @@ void MainApp::start() {
         break;
     };
 
-
     menu = Menu({
          &pages,
          &selected,
@@ -324,6 +323,7 @@ void MainApp::start() {
         });
         m_proxy->getErrors().setScreen(&screen);
         m_proxy->getQueue().setScreen(&screen);
+        m_proxy->m_intercept.setScreen(&screen);
     };
     
     btnSubmit = Button("Launch proxy", submitEndpoint, ButtonOption::Animated());
@@ -345,9 +345,16 @@ void MainApp::start() {
     });
 
     //Message selection
+    auto forwardMessage = [&]{
+        m_proxy->m_intercept.resolve(m_editMessage);
+    };
+
+    auto btnForward = Button("Forward message", forwardMessage, ButtonOption::Animated());
+
     messages_container = Menu({
         &messagesState.m_messageEntries,
-        &messagesState.selectedMessage
+        &messagesState.selectedMessage,
+        btnForward
     });
 
     //Options

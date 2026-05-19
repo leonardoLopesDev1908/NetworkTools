@@ -1,10 +1,10 @@
 #ifndef CHANDLER_H
 #define CHANDLER_H
 
-#include "ErrorQueue.h"
+#include "Intercept.h"
 #include "HttpParser.h"
 #include "Platform.h"
-#include "QueueMessage.h"
+#include "Queue.h"
 
 #include <ftxui/component/screen_interactive.hpp>
 
@@ -15,8 +15,8 @@ class CHandler
 {
 public:
 
-	CHandler(SocketType&& connection, QueueMessage& messages,
-        ErrorQueue& errors);
+    CHandler(SocketType&& connection, Queue<Message>& messages,
+        Queue<std::string>& errors, Intercept& intercept);
     ~CHandler();
 
     void start();
@@ -25,6 +25,7 @@ public:
                                                     bool closeClientSocket);
     void forwardOutbound(bool closeClientSocket);
 	void stop();
+    void turnKeep(bool flag);
 
 private:
     std::expected<void, std::string> read();
@@ -32,6 +33,8 @@ private:
                                                   const std::string& port);
 
 private:
+    bool m_keep = false;
+
     std::string m_requestBuf;
     std::string m_responseBuf;
 
@@ -40,9 +43,10 @@ private:
 
     std::atomic<bool> receiving = true;
 	
-    ErrorQueue& m_errors;
+    Intercept& m_intercept;
     HttpParser m_parser;
-	QueueMessage& m_messages;
+    Queue<std::string>& m_errors;
+	Queue<Message>& m_messages;
 };
 
 #endif

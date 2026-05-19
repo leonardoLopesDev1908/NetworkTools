@@ -26,6 +26,10 @@ public:
     ftxui::Element options_page();
 
 private:
+
+    ftxui::Element edit_messages_menu(Message& msg);
+    ftxui::Element show_messages_menu(std::deque<Message> messages);
+
     enum class Language {English, Portuguese, Spanish};
 
     struct MessagesMenuState
@@ -53,6 +57,7 @@ private:
     int selected = 0;
     int activeTab = 0;
     std::string m_submitError;
+    Message m_editMessage;
 
     InputEndpointState endpointState;
     MessagesMenuState messagesState;
@@ -61,8 +66,13 @@ private:
     ftxui::Component menu;
     ftxui::Component inputHost;
     ftxui::Component inputPort;
+    ftxui::Component methodInput;
+    ftxui::Component pathInput;
+    ftxui::Component bodyText;
+
     ftxui::Component btnSubmit;
     ftxui::Component btnEndProxy;
+    ftxui::Component btnForward;
 
     ftxui::Component main_container;
     ftxui::Component input_container;

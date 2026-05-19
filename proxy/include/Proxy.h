@@ -2,9 +2,9 @@
 #define PROXY_H
 
 #include "CHandler.h"
-#include "ErrorQueue.h"
+#include "Intercept.h"
 #include "Platform.h"
-#include "QueueMessage.h"
+#include "Queue.h"
 #include "ThreadPool.h"
 
 #include <ftxui/component/screen_interactive.hpp>
@@ -21,33 +21,37 @@ public:
 	std::string* m_host = nullptr;
 	std::string* m_port = nullptr;
     std::string* m_errorMessage = nullptr;
+	Intercept m_intercept;
 
 public:
 	Proxy(std::string* host, std::string* port, 
         std::string* errorMessage);
     ~Proxy();
 
+	void stop();
+	
 	std::expected<void, std::string> create();
 	std::expected<void, std::string> start();
-	void stop();
-	//void keep();
-	QueueMessage& getQueue();
-	ErrorQueue& getErrors();
+	
+	Queue<Message>& getQueue();
+	Queue<std::string>& getErrors();
+	
     bool isRunning() const;
+	void turnKeepMessages(bool* keepFlag);
 
 private:
 	SocketType m_socket = INVALID_S;
 	SocketType iCheck = INVALID_S;
 
 	bool proxyRun = false;
-	std::atomic<bool> keepMessage = false;	
+	bool* m_keepMessages = nullptr;	
 	std::mutex m_handlersMutex;
 	
 	std::vector <std::shared_ptr<CHandler>> m_handlers;
 
-	ErrorQueue m_errorQueue;
 	ThreadPool m_conns;
-	QueueMessage m_messages;
+	Queue<std::string> m_errorQueue;
+	Queue<Message> m_messages;
 };
 
 #endif

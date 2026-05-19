@@ -102,7 +102,7 @@ std::expected<void, std::string> Proxy::start()
 		//Pass
 
 		auto newConn = std::make_shared<CHandler>(std::move(clientSocket), m_messages,
-                 m_errorQueue);
+                 m_errorQueue, m_intercept);
 		{
 			std::lock_guard<std::mutex> lck(m_handlersMutex);
 			m_handlers.push_back(newConn);
@@ -136,12 +136,12 @@ void Proxy::stop()
 	platformCleanup();
 }
 
-QueueMessage& Proxy::getQueue()
+Queue<Message>& Proxy::getQueue()
 {
 	return m_messages;
 }
 
-ErrorQueue& Proxy::getErrors()
+Queue<std::string>& Proxy::getErrors()
 {
 	return m_errorQueue;
 }
@@ -149,4 +149,11 @@ ErrorQueue& Proxy::getErrors()
 bool Proxy::isRunning() const
 {
     return proxyRun;
+}
+
+void Proxy::turnKeepMessages(bool* keepFlag)
+{
+	m_keepMessages = keepFlag;
+	for (auto& c : m_handlers)
+		c->turnKeep(keepFlag);
 }

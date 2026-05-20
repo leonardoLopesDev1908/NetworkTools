@@ -4,7 +4,7 @@
 #include <utility>
 
 Proxy::Proxy(std::string* host, std::string* port, 
-    std::string* errorMessage, bool* keepFlag)
+    std::string* errorMessage)
 	: m_host(host), m_port(port), m_errorMessage(errorMessage)
 {	
 }
@@ -95,7 +95,7 @@ std::expected<void, std::string> Proxy::start()
 		}
 
 		auto newConn = std::make_shared<CHandler>(std::move(clientSocket), m_messages,
-                 m_errorQueue, m_intercept);
+                 m_errorQueue, m_intercept, &m_keepMessages);
 		{
 			std::lock_guard<std::mutex> lck(m_handlersMutex);
 			m_handlers.push_back(newConn);
@@ -147,6 +147,4 @@ bool Proxy::isRunning() const
 void Proxy::setKeep(bool keepFlag)
 {
 	m_keepMessages = keepFlag;
-	for (auto& c : m_handlers)
-		c->turnKeep(keepFlag);
 }

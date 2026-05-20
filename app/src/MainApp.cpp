@@ -2,6 +2,8 @@
 
 #include <format>
 
+using namespace ftxui;
+
 MainApp::~MainApp()
 {
     if (m_proxy)
@@ -28,7 +30,7 @@ ftxui::Element MainApp::manual_page()
             sido tao legal quanto eu pensava).
                 
             Para ser mais direto, o fluxo funciona da seguinte forma:
-                - Apos pressionar "1", uma janela de entrada sera aberta esperando que voce insira
+                - Apos pressionar "2", uma janela de entrada sera aberta esperando que voce insira
                 um endpoint (host + porta) onde este programa ficara ouvindo as mensagens. 
                 Exemplo de entrada:
 
@@ -65,7 +67,7 @@ ftxui::Element MainApp::manual_page()
             fue tan genial como pensaba).
                 
             Para ser mas directo, el flujo es el siguiente:
-                - Despues de presionar "1", se abrira una ventana de entrada esperando que ingreses um endpoint 
+                - Despues de presionar "2", se abrira una ventana de entrada esperando que ingreses um endpoint 
                 (host + puerto) donde este programa estara escuchando mensajes. Ejemplo de entrada:
 
                     host: 127.0.0.1
@@ -96,15 +98,15 @@ ftxui::Element MainApp::manual_page()
         started to study network programming in C++ and i saw how cool were some of BurpSuit 
         features.So i decided to make one on my own (maybe this part wasnt as cool as i thought).
 
-        To be more straightforward, the flow is as follows :
-            - After press "1" a input window will open waiting for you to enter a
+        To be more straightforward, the flow is as follows:
+            - After press "2" a input window will open waiting for you to enter a
                 endpoint(host + port) where this program will be listen for messages.
-                Example of input :
+                Example of input:
                     - host: 127.0.0.1
                     - port : 3000
             - Then, you will see a window where you can check a queue of all the messages that will
                 be arriving.You decide which message more attracts you(or if you are already looking
-                for some specific one, just wait for it) and what to do with it : change the method,
+                for some specific one, just wait for it) and what to do with it: change the method,
                 change content, and so on.
             - After chose a message, do all the operations you want to, you can just forward
                 the message to the server and, if you intend to, wait for the respective response.
@@ -159,20 +161,23 @@ ftxui::Element MainApp::messages_menu_page()
         return text("Enter a endpoint at page 2");
     }
 
-    if(optionsState.keepMessagesFlag)
+    if(!optionsState.keepMessagesFlag)
+    {
+        auto messages = m_proxy->getQueue().snapshot();
+        if (messages.empty())
+            return text("Queue is empty.");    
+
+        return show_messages_menu(messages);
+    }
+    else
     {
         auto* pending = m_proxy->m_intercept.pending();
         if(!pending)
             return text("Waiting a message...");
 
+        //return text("Edit area");
         return edit_messages_menu(*pending);
     }
-
-    auto messages = m_proxy->getQueue().snapshot();
-    if (messages.empty())
-        return text("Queue is empty.");    
-
-    return show_messages_menu(messages);
 }
 
 ftxui::Element MainApp::edit_messages_menu(Message& msg)
@@ -203,13 +208,7 @@ ftxui::Element MainApp::edit_messages_menu(Message& msg)
         hbox({ text("Method: "), editState.inputMethod->Render() }),
         hbox({ text("Path:   "), editState.inputPath->Render()   }),
         separator(),
-        text("Headers:") | bold,
-        vbox(std::move(headerElements)),
-        separator(),
-        text("Body:") | bold,
-        editState.inputBody->Render(),
-        separator(),
-        btnForward->Render(),
+        edit_messages_container->Render() | flex,
         text("Tab: navegar entre campos") | color(Color::GrayLight) | italic,
     }) | border;
 }
@@ -388,16 +387,19 @@ void MainApp::start() {
     editState.inputMethod = Input(&editState.method, "Method");
     editState.inputPath = Input(&editState.path, "Path");
     editState.inputBody = Input(&editState.body, "Body");
+    
+    edit_messages_container = Container::Vertical({ 
+        editState.inputMethod,
+        editState.inputPath,
+        editState.inputBody,
+        btnForward
+    });
 
     messages_container = Container::Vertical({
         Menu({
             &messagesState.m_messageEntries,
             &messagesState.selectedMessage
-        }),
-        editState.inputMethod,
-        editState.inputPath,
-        editState.inputBody,
-        btnForward
+        })
     });
 
     //Options
@@ -429,7 +431,9 @@ void MainApp::start() {
             text(" @github: leonardoLopesDev1908 ")
         }) | border;
 
-
+        if(!optionsState.keepMessagesFlag && m_proxy)
+            m_proxy->m_intercept.cancel();
+            
         Element body;
         switch (activeTab)
         {

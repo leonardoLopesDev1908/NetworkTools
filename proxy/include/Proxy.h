@@ -44,7 +44,7 @@ private:
 	SocketType iCheck = INVALID_S;
 
 	bool proxyRun = false;
-    std::atomic<bool> m_keepMessages = nullptr;	
+    std::atomic<bool> m_keepMessages;	
 	std::mutex m_handlersMutex;
 	
 	std::vector <std::shared_ptr<CHandler>> m_handlers;

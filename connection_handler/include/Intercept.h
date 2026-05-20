@@ -15,15 +15,17 @@ public:
 	Message m_pending;
 public:
 	
-	Message wait(Message msg);
+    std::optional<Message> wait(Message msg);
 	void resolve(Message edited);
 	Message* pending();
-	void setScreen(ftxui::ScreenInteractive* screen);
-
+	void cancel();
+    void setScreen(ftxui::ScreenInteractive* screen);
+    
 private:
 	ftxui::ScreenInteractive* m_screen = nullptr;
 
-	bool resolved;
+    bool m_cancelled;
+	bool m_resolved;
 	Message m_edited;
 
 	std::mutex m_mutex;

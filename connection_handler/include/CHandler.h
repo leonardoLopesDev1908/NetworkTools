@@ -16,16 +16,15 @@ class CHandler
 public:
 
     CHandler(SocketType&& connection, Queue<Message>& messages,
-        Queue<std::string>& errors, Intercept& intercept);
+        Queue<std::string>& errors, Intercept& intercept, std::atomic<bool>* keepFlag);
     ~CHandler();
 
     void start();
-	//void edit();
     std::expected<void, std::string> forwardInbound(std::string destiny, std::string port,
                                                     bool closeClientSocket);
     void forwardOutbound(bool closeClientSocket);
 	void stop();
-    void turnKeep(bool flag);
+    void cancel();
 
 private:
     std::expected<void, std::string> read();
@@ -33,7 +32,7 @@ private:
                                                   const std::string& port);
 
 private:
-    bool m_keep = false;
+    std::atomic<bool>* m_keep = nullptr;
 
     std::string m_requestBuf;
     std::string m_responseBuf;

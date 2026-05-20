@@ -7,9 +7,9 @@
 
 
 CHandler::CHandler(SocketType&& clientSocket, Queue<Message>& messages, 
-					Queue<std::string>& errors, Intercept& intercept)
+				Queue<std::string>& errors, Intercept& intercept, std::atomic<bool>* keepFlag)
 	: m_clientSocket(std::move(clientSocket)), m_messages(messages), m_errors(errors), 
-	m_intercept(intercept)
+	m_intercept(intercept), m_keep(keepFlag)
 {
 }
 
@@ -89,9 +89,11 @@ std::expected<void, std::string> CHandler::read()
     if(msg.headers["Connection"] == "close")
         closeClientSocket = true;
 	
-	if (m_keep)
+	if (*m_keep)
 	{
-		msg = m_intercept.wait(std::move(msg));
+		auto edited = m_intercept.wait(std::move(msg));
+        if(edited)
+            msg = std::move(*edited);
 	}
 
 	m_messages.tryPush(std::move(msg));
@@ -223,7 +225,3 @@ void CHandler::stop()
 		closeSocket(f);
 }
 
-void CHandler::turnKeep(bool flag)
-{
-	m_keep = flag;
-}

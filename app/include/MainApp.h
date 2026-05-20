@@ -13,7 +13,6 @@
 #include <stdlib.h>
 #include <thread>
 
-using namespace ftxui;
 
 class MainApp 
 {
@@ -26,7 +25,6 @@ public:
     ftxui::Element options_page();
 
 private:
-
     ftxui::Element edit_messages_menu(Message& msg);
     ftxui::Element show_messages_menu(std::deque<Message> messages);
 
@@ -89,6 +87,7 @@ private:
     ftxui::Component input_container;
     ftxui::Component menu_container;
     ftxui::Component messages_container;
+    ftxui::Component edit_messages_container;
     ftxui::Component options_container;
 
     std::shared_ptr<Proxy> m_proxy;

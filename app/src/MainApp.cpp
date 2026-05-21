@@ -171,26 +171,28 @@ ftxui::Element MainApp::messages_menu_page()
     }
     else
     {
-        auto* pending = m_proxy->m_intercept.pending();
-        if(!pending)
+        m_pending = m_proxy->m_intercept.pending();
+        if(!m_pending)
             return text("Waiting a message...");
 
-        //return text("Edit area");
-        return edit_messages_menu(*pending);
+        return edit_messages_menu();
     }
 }
 
-ftxui::Element MainApp::edit_messages_menu(Message& msg)
-{   
-    if(editState.method.empty() && msg.isRequest())
+ftxui::Element MainApp::edit_messages_menu()
+{ 
+    if (!btnForward)
+        return text("[Error] btnForward not initialized");
+
+    if(editState.method.empty() && m_pending->isRequest())
     {
-        editState.method = msg.request().method;
-        editState.path = msg.request().path;
-        editState.body = msg.body;
+        editState.method = m_pending->request().method;
+        editState.path = m_pending->request().path;
+        editState.body = m_pending->body;
     }
 
-    m_editMessage = msg;
-    if(msg.isRequest())
+    m_editMessage = *m_pending;
+    if(m_pending->isRequest())
     {
         m_editMessage.request().method = editState.method;
         m_editMessage.request().path = editState.path;
@@ -199,17 +201,14 @@ ftxui::Element MainApp::edit_messages_menu(Message& msg)
     m_editMessage.body = editState.body;
 
     std::vector<Element> headerElements;
-    for (const auto& [key, value] : msg.headers)
+    for (const auto& [key, value] : m_pending->headers)
         headerElements.push_back(text(key + ": " + value));
 
     return vbox({
         text("Intercepted message") | bold | color(Color::Yellow),
         separator(),
-        hbox({ text("Method: "), editState.inputMethod->Render() }),
-        hbox({ text("Path:   "), editState.inputPath->Render()   }),
+        edit_messages_container->Render(),
         separator(),
-        edit_messages_container->Render() | flex,
-        text("Tab: navegar entre campos") | color(Color::GrayLight) | italic,
     }) | border;
 }
 
@@ -376,19 +375,20 @@ void MainApp::start() {
 
     //Message selection
     auto forwardMessage = [&]{
-        m_proxy->m_intercept.resolve(m_editMessage);
+        if(m_proxy)
+            m_proxy->m_intercept.resolve(m_editMessage);
         editState.method.clear();
         editState.path.clear();
         editState.body.clear();
     };
 
-    auto btnForward = Button("Forward message", forwardMessage, ButtonOption::Animated());
+    btnForward = Button("Forward message", forwardMessage, ButtonOption::Animated());
 
     editState.inputMethod = Input(&editState.method, "Method");
     editState.inputPath = Input(&editState.path, "Path");
     editState.inputBody = Input(&editState.body, "Body");
-    
-    edit_messages_container = Container::Vertical({ 
+
+    edit_messages_container = Container::Vertical({
         editState.inputMethod,
         editState.inputPath,
         editState.inputBody,
@@ -415,13 +415,17 @@ void MainApp::start() {
         menu,
         input_container,
         messages_container,
-        options_container
+        options_container,
+        edit_messages_container 
     }, &activeTab);
 
     auto renderer = ftxui::Renderer(main_container, [&] {
+        if(m_proxy)
+            m_proxy->setKeep(optionsState.keepMessagesFlag);
+
         auto status = optionsState.keepMessagesFlag
-        ? text("Keep: ON")  | color(Color::Green)
-        : text("Keep: OFF") | color(Color::Red);
+            ? text("Keep: ON")  | color(Color::Green)
+            : text("Keep: OFF") | color(Color::Red);
 
         auto header = hbox({
             text(" ProxyInterceptor ") | color(Color::Blue),
@@ -448,8 +452,11 @@ void MainApp::start() {
             break;
         case 3:
             body = options_page();
-            break;  
+            break;
         case 4:
+            body = messages_menu_page();
+            break;
+        case 5:
             if (m_proxy)
                 m_proxy->stop();
             if (proxyThread.joinable())
@@ -482,6 +489,18 @@ void MainApp::start() {
                 case 1: 
                     activeTab = 1;
                     main_container->SetActiveChild(input_container);
+                    return true;
+                case 2:
+                    if (optionsState.keepMessagesFlag && m_proxy)
+                    {
+                        activeTab = 4;
+                        main_container->SetActiveChild(edit_messages_container);
+                    }
+                    else
+                    {
+                        activeTab = 2;
+                        main_container->SetActiveChild(messages_container);
+                    }
                     return true;
                 case 3:
                     activeTab = 3;

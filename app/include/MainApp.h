@@ -25,7 +25,7 @@ public:
     ftxui::Element options_page();
 
 private:
-    ftxui::Element edit_messages_menu(Message& msg);
+    ftxui::Element edit_messages_menu();
     ftxui::Element show_messages_menu(std::deque<Message> messages);
 
     enum class Language {English, Portuguese, Spanish};
@@ -65,6 +65,7 @@ private:
     int selected = 0;
     int activeTab = 0;
     std::string m_submitError;
+    Message* m_pending = nullptr;
     Message m_editMessage;
 
     InputEndpointState endpointState;

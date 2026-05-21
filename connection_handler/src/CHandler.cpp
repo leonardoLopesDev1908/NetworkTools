@@ -89,7 +89,7 @@ std::expected<void, std::string> CHandler::read()
     if(msg.headers["Connection"] == "close")
         closeClientSocket = true;
 	
-	if (*m_keep)
+	if (*m_keep == true)
 	{
 		auto edited = m_intercept.wait(std::move(msg));
         if(edited)

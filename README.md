@@ -33,7 +33,15 @@ message management
 platform-specific socket handling
 
 Page 2: entering an endpoint
-<img width="1103" height="582" alt="Captura de tela 2026-05-18 105547" src="https://github.com/user-attachments/assets/d5218b2d-099a-41ba-881f-9180d117b1bd" />
+<img width="1100" height="579" alt="Captura de tela 2026-05-26 092337" src="https://github.com/user-attachments/assets/ab153c21-5419-46e7-84fa-d8d33ce9ab54" />
 
 Page 3: visualize messages
-<img width="917" height="758" alt="image" src="https://github.com/user-attachments/assets/65a6b810-4f4d-454c-8e68-4b8d06ebd06f" />
+<img width="1105" height="574" alt="Captura de tela 2026-05-26 092409" src="https://github.com/user-attachments/assets/aa8bffce-4f85-4ea0-8d54-8a915611bca8" />
+
+Page 4: Options
+Here you can enable the Keep flag to edit messages
+<img width="1104" height="577" alt="Captura de tela 2026-05-26 092258" src="https://github.com/user-attachments/assets/1b9d6e47-7efe-4178-8083-957c7cf12c14" />
+
+Page 3: edit messages
+<img width="1104" height="577" alt="Captura de tela 2026-05-26 092258" src="https://github.com/user-attachments/assets/d4b2b7cc-f515-457a-a49b-4a9a5deae057" />
+

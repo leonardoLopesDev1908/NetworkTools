@@ -12,6 +12,6 @@ add_subdirectory(httpparser)
 add_subdirectory(message)
 add_subdirectory(proxy)
 
-add_executable(ProxyInterceptor Main.cpp  "message/include/ErrorQueue.h" "message/src/ErrorQueue.cpp")
+add_executable(ProxyInterceptor Main.cpp)
 
 target_link_libraries(ProxyInterceptor PRIVATE AppInterceptor)

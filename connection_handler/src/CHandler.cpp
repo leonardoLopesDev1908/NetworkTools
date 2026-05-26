@@ -6,11 +6,10 @@
 #include <utility>
 
 
-
-//Fix: Request has no response 
-
-CHandler::CHandler(SocketType&& clientSocket, QueueMessage& messages, ErrorQueue& errors)
-	: m_clientSocket(std::move(clientSocket)), m_messages(messages), m_errors(errors)
+CHandler::CHandler(SocketType&& clientSocket, Queue<Message>& messages, 
+				Queue<std::string>& errors, Intercept& intercept, std::atomic<bool>* keepFlag)
+	: m_clientSocket(std::move(clientSocket)), m_messages(messages), m_errors(errors), 
+	m_intercept(intercept), m_keep(keepFlag)
 {
 }
 
@@ -26,7 +25,7 @@ void CHandler::start()
 		auto result = read();
 		if (!result)
 		{
-			m_errors.push(result.error());
+			m_errors.tryPush(std::move(result.error()));
 		}
 	}
 }
@@ -36,7 +35,6 @@ std::expected<void, std::string> CHandler::read()
 	char temp[4096];
 	size_t headerEnd = std::string::npos;
 
-	//Error
 	while (headerEnd == std::string::npos)
 	{
 		int bytes = recv(m_clientSocket, temp, sizeof(temp), 0);
@@ -75,7 +73,7 @@ std::expected<void, std::string> CHandler::read()
 	std::string firstLine = m_requestBuf.substr(0, m_requestBuf.find("\r\n"));
 
 	Message msg = m_parser.parse(m_requestBuf, Direction::Inbound);
-	
+
     std::string destiny = msg.headers["Host"];
 	std::string host = destiny;
 	std::string port = "80";
@@ -90,9 +88,16 @@ std::expected<void, std::string> CHandler::read()
 	bool closeClientSocket = false;
     if(msg.headers["Connection"] == "close")
         closeClientSocket = true;
+	
+	if (*m_keep == true)
+	{
+		auto edited = m_intercept.wait(std::move(msg));
+        if(edited)
+            msg = std::move(*edited);
+	}
 
 	m_messages.tryPush(std::move(msg));
-
+	
 	auto result = forwardInbound(host, port, closeClientSocket);
 
 	if (!result)
@@ -110,7 +115,7 @@ std::expected<void, std::string> CHandler::forwardInbound(std::string host, std:
 
 	if (!result)
 		return result;
-
+ 
 	while (sentBytes < m_requestBuf.size())
 	{
 		int bytes = send(m_forwardSocket, m_requestBuf.c_str(), m_requestBuf.size(), 0);
@@ -126,13 +131,56 @@ std::expected<void, std::string> CHandler::forwardInbound(std::string host, std:
 
 void CHandler::forwardOutbound(bool closeClientSocket)
 {
-	char response[4096];
-	while (true)
+    char response[4096];
+    size_t lengthPos = std::string::npos;
+    size_t headerEnd = std::string::npos;
+    size_t bodyLength;
+    bool hasContentLength = false;
+
+    while (true)
 	{
 		int bytes = recv(m_forwardSocket, response, sizeof(response), 0);
 		if (bytes <= 0) break;
-		m_responseBuf.append(response, bytes);
-	}
+        m_responseBuf.append(response, bytes);
+
+
+        if(headerEnd == std::string::npos)
+        {
+            headerEnd = m_responseBuf.find("\r\n\r\n");
+            
+            if(headerEnd == std::string::npos) continue;
+
+            lengthPos = m_responseBuf.find("Content-Length: ");
+            if(lengthPos != std::string::npos)
+            {
+                size_t valueStart = lengthPos + 15;
+
+                while(valueStart < m_responseBuf.size() &&
+                        m_responseBuf[valueStart] == ' ')
+                {
+                    ++valueStart;
+                }
+
+                size_t valueEnd = m_responseBuf.find("\r\n", valueStart);
+
+                std::string lengthStr = m_responseBuf.substr(
+                        valueStart, valueEnd - valueStart    
+                    );
+
+                bodyLength = std::stoul(lengthStr);
+                hasContentLength = true;
+            }
+            else
+            {
+                break;
+            }
+        }
+        if(hasContentLength)
+        {
+            size_t bodyReceived = m_responseBuf.size() - (headerEnd + 4);              
+            if(bodyReceived >= bodyLength) break;
+        }
+	}  
 
     size_t sentBytes = 0;
 	while (sentBytes < m_responseBuf.size())
@@ -143,7 +191,6 @@ void CHandler::forwardOutbound(bool closeClientSocket)
         sentBytes += bytes;
 	}
 
-	size_t headerEnd = m_responseBuf.find("\r\n\r\n");
 	if (headerEnd == std::string::npos)
 	{
 		m_responseBuf.clear();
@@ -219,3 +266,4 @@ void CHandler::stop()
 	if (f != INVALID_S)
 		closeSocket(f);
 }
+

@@ -30,7 +30,7 @@ ftxui::Element MainApp::manual_page()
             sido tao legal quanto eu pensava).
                 
             Para ser mais direto, o fluxo funciona da seguinte forma:
-                - Apos pressionar "1", uma janela de entrada sera aberta esperando que voce insira
+                - Apos pressionar "2", uma janela de entrada sera aberta esperando que voce insira
                 um endpoint (host + porta) onde este programa ficara ouvindo as mensagens. 
                 Exemplo de entrada:
 
@@ -67,7 +67,7 @@ ftxui::Element MainApp::manual_page()
             fue tan genial como pensaba).
                 
             Para ser mas directo, el flujo es el siguiente:
-                - Despues de presionar "1", se abrira una ventana de entrada esperando que ingreses um endpoint 
+                - Despues de presionar "2", se abrira una ventana de entrada esperando que ingreses um endpoint 
                 (host + puerto) donde este programa estara escuchando mensajes. Ejemplo de entrada:
 
                     host: 127.0.0.1
@@ -98,15 +98,15 @@ ftxui::Element MainApp::manual_page()
         started to study network programming in C++ and i saw how cool were some of BurpSuit 
         features.So i decided to make one on my own (maybe this part wasnt as cool as i thought).
 
-        To be more straightforward, the flow is as follows :
-            - After press "1" a input window will open waiting for you to enter a
+        To be more straightforward, the flow is as follows:
+            - After press "2" a input window will open waiting for you to enter a
                 endpoint(host + port) where this program will be listen for messages.
-                Example of input :
+                Example of input:
                     - host: 127.0.0.1
                     - port : 3000
             - Then, you will see a window where you can check a queue of all the messages that will
                 be arriving.You decide which message more attracts you(or if you are already looking
-                for some specific one, just wait for it) and what to do with it : change the method,
+                for some specific one, just wait for it) and what to do with it: change the method,
                 change content, and so on.
             - After chose a message, do all the operations you want to, you can just forward
                 the message to the server and, if you intend to, wait for the respective response.
@@ -161,11 +161,59 @@ ftxui::Element MainApp::messages_menu_page()
         return text("Enter a endpoint at page 2");
     }
 
-    auto messages = m_proxy->getQueue().snapshot();
-    
-    if (messages.empty())
-        return text("Queue is empty.");
+    if(!optionsState.keepMessagesFlag)
+    {
+        auto messages = m_proxy->getQueue().snapshot();
+        if (messages.empty())
+            return text("Queue is empty.");    
 
+        return show_messages_menu(messages);
+    }
+    else
+    {
+        m_pending = m_proxy->m_intercept.pending();
+        if(!m_pending)
+            return text("Waiting a message...");
+
+        return edit_messages_menu();
+    }
+}
+
+ftxui::Element MainApp::edit_messages_menu()
+{ 
+    if (!btnForward)
+        return text("[Error] btnForward not initialized");
+
+    if(editState.method.empty() && m_pending->isRequest())
+    {
+        editState.method = m_pending->request().method;
+        editState.path = m_pending->request().path;
+        editState.body = m_pending->body;
+    }
+
+    m_editMessage = *m_pending;
+    if(m_pending->isRequest())
+    {
+        m_editMessage.request().method = editState.method;
+        m_editMessage.request().path = editState.path;
+    }
+    
+    m_editMessage.body = editState.body;
+
+    std::vector<Element> headerElements;
+    for (const auto& [key, value] : m_pending->headers)
+        headerElements.push_back(text(key + ": " + value));
+
+    return vbox({
+        text("Intercepted message") | bold | color(Color::Yellow),
+        separator(),
+        edit_messages_container->Render(),
+        separator(),
+    }) | border;
+}
+
+ftxui::Element MainApp::show_messages_menu(std::deque<Message> messages)
+{
     messagesState.m_messageEntries.clear();
     for (auto it = messages.begin(); it != messages.end(); it++)
     {
@@ -186,18 +234,6 @@ ftxui::Element MainApp::messages_menu_page()
     }
 
     Element detail;
-    switch (optionsState.selectedLanguage)
-    {
-    case 1:
-        detail = text("Selecione uma mensagem") | center;
-        break;
-    case 2:
-        detail = text("Selecione una mensage") | center;
-        break;
-    default:
-        detail = text("Select a message") | center;
-        break;
-    }
 
     if (messagesState.selectedMessage >= 0 &&
         messagesState.selectedMessage < messages.size())
@@ -245,13 +281,6 @@ void MainApp::start() {
 
     auto screen = ftxui::ScreenInteractive::Fullscreen();
 
-    auto header =
-        hbox({
-            text(" ProxyInterceptor ") | color(Color::Blue),
-            filler(),
-            text(" @github: leonardoLopesDev1908 ")
-            }) | border;
-
     //Menu 
     std::vector<std::string> pages;
     switch (optionsState.selectedLanguage) 
@@ -276,7 +305,6 @@ void MainApp::start() {
         };
         break;
     };
-
 
     menu = Menu({
          &pages,
@@ -324,6 +352,7 @@ void MainApp::start() {
         });
         m_proxy->getErrors().setScreen(&screen);
         m_proxy->getQueue().setScreen(&screen);
+        m_proxy->m_intercept.setScreen(&screen);
     };
     
     btnSubmit = Button("Launch proxy", submitEndpoint, ButtonOption::Animated());
@@ -345,9 +374,32 @@ void MainApp::start() {
     });
 
     //Message selection
-    messages_container = Menu({
-        &messagesState.m_messageEntries,
-        &messagesState.selectedMessage
+    auto forwardMessage = [&]{
+        if(m_proxy)
+            m_proxy->m_intercept.resolve(m_editMessage);
+        editState.method.clear();
+        editState.path.clear();
+        editState.body.clear();
+    };
+
+    btnForward = Button("Forward message", forwardMessage, ButtonOption::Animated());
+
+    editState.inputMethod = Input(&editState.method, "Method");
+    editState.inputPath = Input(&editState.path, "Path");
+    editState.inputBody = Input(&editState.body, "Body");
+
+    edit_messages_container = Container::Vertical({
+        editState.inputMethod,
+        editState.inputPath,
+        editState.inputBody,
+        btnForward
+    });
+
+    messages_container = Container::Vertical({
+        Menu({
+            &messagesState.m_messageEntries,
+            &messagesState.selectedMessage
+        })
     });
 
     //Options
@@ -363,10 +415,29 @@ void MainApp::start() {
         menu,
         input_container,
         messages_container,
-        options_container
+        options_container,
+        edit_messages_container 
     }, &activeTab);
 
     auto renderer = ftxui::Renderer(main_container, [&] {
+        if(m_proxy)
+            m_proxy->setKeep(optionsState.keepMessagesFlag);
+
+        auto status = optionsState.keepMessagesFlag
+            ? text("Keep: ON")  | color(Color::Green)
+            : text("Keep: OFF") | color(Color::Red);
+
+        auto header = hbox({
+            text(" ProxyInterceptor ") | color(Color::Blue),
+            filler(),
+            status,
+            filler(),
+            text(" @github: leonardoLopesDev1908 ")
+        }) | border;
+
+        if(!optionsState.keepMessagesFlag && m_proxy)
+            m_proxy->m_intercept.cancel();
+            
         Element body;
         switch (activeTab)
         {
@@ -381,8 +452,11 @@ void MainApp::start() {
             break;
         case 3:
             body = options_page();
-            break;  
+            break;
         case 4:
+            body = messages_menu_page();
+            break;
+        case 5:
             if (m_proxy)
                 m_proxy->stop();
             if (proxyThread.joinable())
@@ -415,6 +489,18 @@ void MainApp::start() {
                 case 1: 
                     activeTab = 1;
                     main_container->SetActiveChild(input_container);
+                    return true;
+                case 2:
+                    if (optionsState.keepMessagesFlag && m_proxy)
+                    {
+                        activeTab = 4;
+                        main_container->SetActiveChild(edit_messages_container);
+                    }
+                    else
+                    {
+                        activeTab = 2;
+                        main_container->SetActiveChild(messages_container);
+                    }
                     return true;
                 case 3:
                     activeTab = 3;

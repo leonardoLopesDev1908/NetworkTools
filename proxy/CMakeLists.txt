@@ -1,28 +1,15 @@
-set(SOURCES)
-set(PROXY_INCLUDE_DIR)
-
-list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Proxy.cpp)
-set(PROXY_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-#if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-#   list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ProxyLinux.cpp)
-#   set(PROXY_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/linux)
-#elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-#    list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ProxyWindows.cpp)
-#   set(PROXY_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/windows)
-#endif()
-
-list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ThreadPool.cpp)
-
-add_library(Proxy STATIC ${SOURCES})
+add_library(Proxy STATIC 
+    "../connection_handler/src/Intercept.cpp"
+    "src/Proxy.cpp"
+    "src/ThreadPool.cpp"
+)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(Proxy PRIVATE ws2_32)
 endif()
 
 target_include_directories(Proxy PUBLIC 
-    ${PROXY_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/cross-platform
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(Proxy PUBLIC CHandler)
+target_link_libraries(Proxy PUBLIC CHandler CommonUtilities)

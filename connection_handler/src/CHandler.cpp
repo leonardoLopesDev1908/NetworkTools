@@ -150,7 +150,7 @@ void CHandler::forwardOutbound(bool closeClientSocket)
             
             if(headerEnd == std::string::npos) continue;
 
-            lengthPos = m_responseBuf;find("Content-Length: ");
+            lengthPos = m_responseBuf.find("Content-Length: ");
             if(lengthPos != std::string::npos)
             {
                 size_t valueStart = lengthPos + 15;
@@ -191,7 +191,6 @@ void CHandler::forwardOutbound(bool closeClientSocket)
         sentBytes += bytes;
 	}
 
-	size_t headerEnd = m_responseBuf.find("\r\n\r\n");
 	if (headerEnd == std::string::npos)
 	{
 		m_responseBuf.clear();

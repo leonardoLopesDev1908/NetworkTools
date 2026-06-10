@@ -9,11 +9,9 @@
 #include <mutex>
 #include <optional>
 
-template <typename T>
-class Queue
+template <typename T> class Queue
 {
-public:
-    
+  public:
     void tryPush(T&& t)
     {
         {
@@ -23,11 +21,11 @@ public:
         if (m_screen)
             m_screen->PostEvent(ftxui::Event::Custom);
     }
-    
+
     std::optional<T> tryPop()
     {
         std::unique_lock<std::mutex> lck(m_queueMutex);
-        
+
         if (m_items.empty())
             return std::nullopt;
 
@@ -39,7 +37,7 @@ public:
     T front()
     {
         std::unique_lock<std::mutex> lck(m_queueMutex);
-        m_queueCond.wait(lck, [&] {return !m_items.empty();});
+        m_queueCond.wait(lck, [&] { return !m_items.empty(); });
         return m_items.front();
     }
 
@@ -49,21 +47,15 @@ public:
         return m_items.empty();
     }
 
-    void setScreen(ftxui::ScreenInteractive* screen)
-    {
-        m_screen = screen;
-    }
+    void setScreen(ftxui::ScreenInteractive* screen) { m_screen = screen; }
 
-    std::deque<T> snapshot()
-    {
-        return m_items;
-    }
+    std::deque<T> snapshot() { return m_items; }
 
-private:
+  private:
     ftxui::ScreenInteractive* m_screen = nullptr;
 
     std::deque<T> m_items;
-    
+
     std::condition_variable m_queueCond;
     std::mutex m_queueMutex;
     std::mutex m_screenMutex;

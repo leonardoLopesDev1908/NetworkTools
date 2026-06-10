@@ -9,7 +9,6 @@
         "installDir": "${sourceDir}/out/install/${presetName}",
         "vendor": {
             "microsoft.com/VisualStudioSettings/CMake/1.0": {
-                "clangTidyChecks": "llvm-include-order, -modernize-use-override",
                 "enableMicrosoftCodeAnalysis": true,
                 "enableClangTidyCodeAnalysis": true
             }

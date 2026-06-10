@@ -5,128 +5,124 @@
 #include <string>
 #include <utility>
 
-
-CHandler::CHandler(SocketType&& clientSocket, Queue<Message>& messages, 
-				Queue<std::string>& errors, Intercept& intercept, std::atomic<bool>* keepFlag)
-	: m_clientSocket(std::move(clientSocket)), m_messages(messages), m_errors(errors), 
-	m_intercept(intercept), m_keep(keepFlag)
+CHandler::CHandler(SocketType&& clientSocket, Queue<Message>& messages, Queue<std::string>& errors,
+                   Intercept& intercept, std::atomic<bool>* keepFlag)
+    : m_clientSocket(std::move(clientSocket)), m_messages(messages), m_errors(errors),
+      m_intercept(intercept), m_keep(keepFlag)
 {
 }
 
-CHandler::~CHandler()
-{
-	stop();
-}
+CHandler::~CHandler() { stop(); }
 
 void CHandler::start()
 {
-	while (receiving)
-	{
-		auto result = read();
-		if (!result)
-		{
-			m_errors.tryPush(std::move(result.error()));
-		}
-	}
+    while (receiving)
+    {
+        auto result = read();
+        if (!result)
+        {
+            m_errors.tryPush(std::move(result.error()));
+        }
+    }
 }
 
 std::expected<void, std::string> CHandler::read()
 {
-	char temp[4096];
-	size_t headerEnd = std::string::npos;
+    char temp[4096];
+    size_t headerEnd = std::string::npos;
 
-	while (headerEnd == std::string::npos)
-	{
-		int bytes = recv(m_clientSocket, temp, sizeof(temp), 0);
-		if (bytes <= 0) {
-			receiving = false;
-			return {};
-		}
+    while (headerEnd == std::string::npos)
+    {
+        int bytes = recv(m_clientSocket, temp, sizeof(temp), 0);
+        if (bytes <= 0)
+        {
+            receiving = false;
+            return {};
+        }
 
-		m_requestBuf.append(temp, bytes);
-		headerEnd = m_requestBuf.find("\r\n\r\n");
-	}
+        m_requestBuf.append(temp, bytes);
+        headerEnd = m_requestBuf.find("\r\n\r\n");
+    }
 
-	size_t pos = m_requestBuf.find("Content-Length: ");
-	if (pos != std::string::npos)
-	{
-		int length = std::stoi(m_requestBuf.substr(
-                    pos + 16, m_requestBuf.find("\r\n", pos) - pos
-        ));
+    size_t pos = m_requestBuf.find("Content-Length: ");
+    if (pos != std::string::npos)
+    {
+        int length = std::stoi(m_requestBuf.substr(pos + 16, m_requestBuf.find("\r\n", pos) - pos));
 
-		size_t bodyStart = headerEnd + 4;
-		size_t currentBodySize = m_requestBuf.size() - bodyStart;
+        size_t bodyStart = headerEnd + 4;
+        size_t currentBodySize = m_requestBuf.size() - bodyStart;
 
-		while (currentBodySize < length)
-		{
-			int bytes = recv(m_clientSocket, temp, sizeof(temp), 0);
-			if (bytes <= 0) {
-				receiving = false;
-				break;
-			}
+        while (currentBodySize < length)
+        {
+            int bytes = recv(m_clientSocket, temp, sizeof(temp), 0);
+            if (bytes <= 0)
+            {
+                receiving = false;
+                break;
+            }
 
-			m_requestBuf.append(temp, bytes);
-			currentBodySize += bytes;
-		}
-	}
+            m_requestBuf.append(temp, bytes);
+            currentBodySize += bytes;
+        }
+    }
 
-	std::string firstLine = m_requestBuf.substr(0, m_requestBuf.find("\r\n"));
+    std::string firstLine = m_requestBuf.substr(0, m_requestBuf.find("\r\n"));
 
-	Message msg = m_parser.parse(m_requestBuf, Direction::Inbound);
+    Message msg = m_parser.parse(m_requestBuf, Direction::Inbound);
 
     std::string destiny = msg.headers["Host"];
-	std::string host = destiny;
-	std::string port = "80";
+    std::string host = destiny;
+    std::string port = "80";
 
-	size_t portPos = destiny.find(":");
-	if (portPos != std::string::npos)
-	{
-		host = destiny.substr(0, portPos);
-		port = destiny.substr(portPos + 1);
-	}
+    size_t portPos = destiny.find(":");
+    if (portPos != std::string::npos)
+    {
+        host = destiny.substr(0, portPos);
+        port = destiny.substr(portPos + 1);
+    }
 
-	bool closeClientSocket = false;
-    if(msg.headers["Connection"] == "close")
+    bool closeClientSocket = false;
+    if (msg.headers["Connection"] == "close")
         closeClientSocket = true;
-	
-	if (*m_keep == true)
-	{
-		auto edited = m_intercept.wait(std::move(msg));
-        if(edited)
+
+    if (*m_keep == true)
+    {
+        auto edited = m_intercept.wait(std::move(msg));
+        if (edited)
             msg = std::move(*edited);
-	}
+    }
 
-	m_messages.tryPush(std::move(msg));
-	
-	auto result = forwardInbound(host, port, closeClientSocket);
+    m_messages.tryPush(std::move(msg));
 
-	if (!result)
-		return result;
+    auto result = forwardInbound(host, port, closeClientSocket);
 
-	return {};
+    if (!result)
+        return result;
+
+    return {};
 }
 
 std::expected<void, std::string> CHandler::forwardInbound(std::string host, std::string port,
-											bool closeClientSocket)
+                                                          bool closeClientSocket)
 {
-	size_t sentBytes = 0;
-	
-	auto result = remoteSocket(host, port);
+    size_t sentBytes = 0;
 
-	if (!result)
-		return result;
- 
-	while (sentBytes < m_requestBuf.size())
-	{
-		int bytes = send(m_forwardSocket, m_requestBuf.c_str(), m_requestBuf.size(), 0);
-		sentBytes += bytes;
-	}
+    auto result = remoteSocket(host, port);
 
-	m_requestBuf.clear();
+    if (!result)
+        return result;
+
+    while (sentBytes < m_requestBuf.size())
+    {
+        int bytes = send(m_forwardSocket, m_requestBuf.c_str(), m_requestBuf.size(), 0);
+        sentBytes += bytes;
+    }
+
+    m_requestBuf.clear();
 
     forwardOutbound(closeClientSocket);
 
-	return {};
+    return {};
 }
 
 void CHandler::forwardOutbound(bool closeClientSocket)
@@ -138,34 +134,32 @@ void CHandler::forwardOutbound(bool closeClientSocket)
     bool hasContentLength = false;
 
     while (true)
-	{
-		int bytes = recv(m_forwardSocket, response, sizeof(response), 0);
-		if (bytes <= 0) break;
+    {
+        int bytes = recv(m_forwardSocket, response, sizeof(response), 0);
+        if (bytes <= 0)
+            break;
         m_responseBuf.append(response, bytes);
 
-
-        if(headerEnd == std::string::npos)
+        if (headerEnd == std::string::npos)
         {
             headerEnd = m_responseBuf.find("\r\n\r\n");
-            
-            if(headerEnd == std::string::npos) continue;
+
+            if (headerEnd == std::string::npos)
+                continue;
 
             lengthPos = m_responseBuf.find("Content-Length: ");
-            if(lengthPos != std::string::npos)
+            if (lengthPos != std::string::npos)
             {
                 size_t valueStart = lengthPos + 15;
 
-                while(valueStart < m_responseBuf.size() &&
-                        m_responseBuf[valueStart] == ' ')
+                while (valueStart < m_responseBuf.size() && m_responseBuf[valueStart] == ' ')
                 {
                     ++valueStart;
                 }
 
                 size_t valueEnd = m_responseBuf.find("\r\n", valueStart);
 
-                std::string lengthStr = m_responseBuf.substr(
-                        valueStart, valueEnd - valueStart    
-                    );
+                std::string lengthStr = m_responseBuf.substr(valueStart, valueEnd - valueStart);
 
                 bodyLength = std::stoul(lengthStr);
                 hasContentLength = true;
@@ -175,48 +169,50 @@ void CHandler::forwardOutbound(bool closeClientSocket)
                 break;
             }
         }
-        if(hasContentLength)
+        if (hasContentLength)
         {
-            size_t bodyReceived = m_responseBuf.size() - (headerEnd + 4);              
-            if(bodyReceived >= bodyLength) break;
+            size_t bodyReceived = m_responseBuf.size() - (headerEnd + 4);
+            if (bodyReceived >= bodyLength)
+                break;
         }
-	}  
+    }
 
     size_t sentBytes = 0;
-	while (sentBytes < m_responseBuf.size())
-	{
-		int bytes = send(m_clientSocket, m_responseBuf.c_str(), m_responseBuf.size(), 0);
-		if(bytes <= 0) break;
+    while (sentBytes < m_responseBuf.size())
+    {
+        int bytes = send(m_clientSocket, m_responseBuf.c_str(), m_responseBuf.size(), 0);
+        if (bytes <= 0)
+            break;
 
         sentBytes += bytes;
-	}
+    }
 
-	if (headerEnd == std::string::npos)
-	{
-		m_responseBuf.clear();
-		return;
-	}
+    if (headerEnd == std::string::npos)
+    {
+        m_responseBuf.clear();
+        return;
+    }
 
     Message msg = m_parser.parse(m_responseBuf, Direction::Outbound);
 
-    if(msg.headers["Connection"] == "close")
+    if (msg.headers["Connection"] == "close")
         closeSocket(m_forwardSocket);
-    
-    if(closeClientSocket)
+
+    if (closeClientSocket)
     {
         receiving = false;
     }
 
     m_messages.tryPush(std::move(msg));
 
-	m_responseBuf.clear();
+    m_responseBuf.clear();
 }
 
 std::expected<void, std::string> CHandler::remoteSocket(const std::string& host,
-														const std::string& port)
+                                                        const std::string& port)
 {
-	struct addrinfo hints{}, *result = nullptr;
-	
+    struct addrinfo hints{}, *result = nullptr;
+
 #ifdef _WIN32
     ZeroMemory(&hints, sizeof(hints));
 #elif __linux__
@@ -224,46 +220,44 @@ std::expected<void, std::string> CHandler::remoteSocket(const std::string& host,
 #endif
 
     hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
 
-	int iCheck = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
-	if (iCheck != 0)
-	{
-	    return std::unexpected("[Error]: getaddrinfo forward socket: " + 
-			std::to_string(iCheck) + "\n");
-	}
-
-	m_forwardSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-	
-    if (m_forwardSocket == INVALID_S)
-    {
-		freeaddrinfo(result);
-		return std::unexpected("[Error]: socket forward socket: " + 
-			std::to_string(m_forwardSocket) + '\n');
-	}
-
-	iCheck = connect(m_forwardSocket, result->ai_addr, (int)result->ai_addrlen);
+    int iCheck = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
     if (iCheck != 0)
     {
-		freeaddrinfo(result);
-		return std::unexpected("[Error]: connect forward socket: " + 
-			std::to_string(iCheck) + "\n");
-	}
+        return std::unexpected("[Error]: getaddrinfo forward socket: " + std::to_string(iCheck) +
+                               "\n");
+    }
 
-	freeaddrinfo(result);
-	return {};
+    m_forwardSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+
+    if (m_forwardSocket == INVALID_S)
+    {
+        freeaddrinfo(result);
+        return std::unexpected(
+            "[Error]: socket forward socket: " + std::to_string(m_forwardSocket) + '\n');
+    }
+
+    iCheck = connect(m_forwardSocket, result->ai_addr, (int)result->ai_addrlen);
+    if (iCheck != 0)
+    {
+        freeaddrinfo(result);
+        return std::unexpected("[Error]: connect forward socket: " + std::to_string(iCheck) + "\n");
+    }
+
+    freeaddrinfo(result);
+    return {};
 }
 
 void CHandler::stop()
 {
-	receiving = false;
-	SocketType s = std::exchange(m_clientSocket, INVALID_S);
-	if (s != INVALID_S)
-		closeSocket(s);
+    receiving = false;
+    SocketType s = std::exchange(m_clientSocket, INVALID_S);
+    if (s != INVALID_S)
+        closeSocket(s);
 
-	SocketType f = std::exchange(m_forwardSocket, INVALID_S);
-	if (f != INVALID_S)
-		closeSocket(f);
+    SocketType f = std::exchange(m_forwardSocket, INVALID_S);
+    if (f != INVALID_S)
+        closeSocket(f);
 }
-

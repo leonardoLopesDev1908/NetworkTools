@@ -7,67 +7,49 @@
 #define NOMINMAX
 
 #ifdef _WIN32
-    //NOLINTBEGIN(llvm-include-order)
-    #include <WinSock2.h>  
-    #include <ws2tcpip.h>   
-    #include <Windows.h>     
-    //NOLINTEND(llvm-include-order)
-    
-    using SocketType = SOCKET;
-    constexpr SocketType INVALID_S = INVALID_SOCKET;
+// NOLINTBEGIN(llvm-include-order)
+#include <WinSock2.h>
+#include <Windows.h>
+#include <ws2tcpip.h>
+// NOLINTEND(llvm-include-order)
 
-    inline std::expected<void, std::string> platformInit()
-    {
-	    WSADATA wsaData{};
-	    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-		    return std::unexpected("[Error] start\n");
-        return {};
-    }
+using SocketType = SOCKET;
+constexpr SocketType INVALID_S = INVALID_SOCKET;
 
-    inline void platformCleanup() { WSACleanup(); }
+inline std::expected<void, std::string> platformInit()
+{
+    WSADATA wsaData{};
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+        return std::unexpected("[Error] start\n");
+    return {};
+}
 
-    inline void closeSocket(SocketType s) 
-    {
-        closesocket(s);
-    }
+inline void platformCleanup() { WSACleanup(); }
 
-    inline bool isInvalid(SocketType s)
-    {
-        return s == INVALID_SOCKET;
-    }
+inline void closeSocket(SocketType s) { closesocket(s); }
 
-    inline bool isSocketError(SocketType s)
-    {
-        return s == SOCKET_ERROR;
-    }
+inline bool isInvalid(SocketType s) { return s == INVALID_SOCKET; }
+
+inline bool isSocketError(SocketType s) { return s == SOCKET_ERROR; }
 
 #elif __linux__
-    #include <netdb.h>
-    #include <netinet/in.h>
-    #include <sys/socket.h>
-    #include <unistd.h>
-    #include <vector>
-    
-    using SocketType = int;
-    constexpr SocketType INVALID_S = -1;
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <vector>
 
-    inline void platformInit() {}
-    inline void platformCleanup() {}
-    
-    inline void closeSocket(SocketType s) 
-    {
-        close(s);
-    }
+using SocketType = int;
+constexpr SocketType INVALID_S = -1;
 
-    inline bool isInvalid(SocketType s)
-    {
-        return s == -1;
-    }   
+inline void platformInit() {}
+inline void platformCleanup() {}
 
-    inline bool isSocketError(SocketType s)
-    {
-        return s == -1;
-    }
+inline void closeSocket(SocketType s) { close(s); }
+
+inline bool isInvalid(SocketType s) { return s == -1; }
+
+inline bool isSocketError(SocketType s) { return s == -1; }
 
 #endif
 

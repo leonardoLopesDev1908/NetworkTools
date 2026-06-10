@@ -10,27 +10,25 @@
 
 class Intercept
 {
-public:
+  public:
+    Message m_pending;
 
-	Message m_pending;
-public:
-	
+  public:
     std::optional<Message> wait(Message msg);
-	void resolve(Message edited);
-	Message* pending();
-	void cancel();
+    void resolve(Message edited);
+    Message* pending();
+    void cancel();
     void setScreen(ftxui::ScreenInteractive* screen);
-    
-private:
-	ftxui::ScreenInteractive* m_screen = nullptr;
+
+  private:
+    ftxui::ScreenInteractive* m_screen = nullptr;
 
     bool m_cancelled;
-	bool m_resolved;
-	Message m_edited;
+    bool m_resolved;
+    Message m_edited;
 
-	std::mutex m_mutex;
-	std::condition_variable m_cond;
+    std::mutex m_mutex;
+    std::condition_variable m_cond;
 };
-
 
 #endif

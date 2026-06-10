@@ -14,8 +14,8 @@ Message HttpParser::parse(std::string& raw, Direction direction)
     msg.direction = direction;
 
     std::string firstLine = getFirstLine(raw);
-    
-    if(direction == Direction::Outbound)
+
+    if (direction == Direction::Outbound)
     {
         StatusLine sl;
         std::istringstream iss(firstLine);
@@ -31,13 +31,13 @@ Message HttpParser::parse(std::string& raw, Direction direction)
         msg.startLine = rl;
     }
 
-    //Body is not parsed
+    // Body is not parsed
 
     size_t endHeaders = parseHeaders(raw, firstLine.size() + 2, msg.headers);
 
-    try {
-        if (msg.headers.contains("Content-Length") &&
-            stoi(msg.headers["Content-Length"]) > 0)
+    try
+    {
+        if (msg.headers.contains("Content-Length") && stoi(msg.headers["Content-Length"]) > 0)
         {
             msg.body = parseBody(raw, endHeaders, msg.headers["Content-Length"]);
         }
@@ -53,42 +53,41 @@ Message HttpParser::parse(std::string& raw, Direction direction)
 std::string HttpParser::getFirstLine(std::string& raw)
 {
     size_t end = raw.find("\r\n");
-    std::string firstLine (raw.begin(), raw.begin() + end); 
+    std::string firstLine(raw.begin(), raw.begin() + end);
 
     return firstLine;
 }
 
-size_t HttpParser::parseHeaders(std::string& raw, size_t start, 
-        std::unordered_map<std::string, std::string>& headers)
+size_t HttpParser::parseHeaders(std::string& raw, size_t start,
+                                std::unordered_map<std::string, std::string>& headers)
 {
     size_t end;
-     
-    while(true)
+
+    while (true)
     {
         end = raw.find("\r\n", start);
         if (end == std::string::npos)
             break;
 
         std::string line = raw.substr(start, end - start);
-        
-        if(line == "") //end of headers
+
+        if (line == "") // end of headers
             break;
-        
+
         size_t endKey = line.find(":");
-        headers.insert({
-            line.substr(0, endKey), 
-            line.substr(endKey + 2)
-        });
+        headers.insert({line.substr(0, endKey), line.substr(endKey + 2)});
 
         start = end + 2;
-    }   
+    }
     return end + 2;
 }
 
-//The rules for determining when a message body is present in an HTTP/1.1 message differ for requests and responses.
+// The rules for determining when a message body is present in an HTTP/1.1 message differ for
+// requests and responses.
 
-//The presence of a message body in a request is signaled by a Content-Length or Transfer-Encoding header field. 
-// Request message framing is independent of method semantics.
+// The presence of a message body in a request is signaled by a Content-Length or Transfer-Encoding
+// header field.
+//  Request message framing is independent of method semantics.
 
 std::string HttpParser::parseBody(std::string& raw, size_t start, std::string len)
 {

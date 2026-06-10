@@ -9,17 +9,16 @@
 #include <thread>
 #include <vector>
 
-
 class ThreadPool
 {
-public:
+  public:
     ThreadPool(std::size_t numThreads = std::thread::hardware_concurrency());
-    ~ThreadPool();  
+    ~ThreadPool();
 
     void enqueue(std::function<void()> task);
     void stop();
 
-private:
+  private:
     bool m_stop = false;
 
     std::mutex m_mutex;

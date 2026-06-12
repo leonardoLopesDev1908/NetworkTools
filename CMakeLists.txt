@@ -1,18 +1,17 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProxyInterceptor)
+project(NetworkTools)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_subdirectory(app)
-add_subdirectory(common_utilities)
-add_subdirectory(connection_handler)
-add_subdirectory(httpparser)
-add_subdirectory(message)
-add_subdirectory(proxy)
+add_subdirectory(Proxy-Interceptor)
+#add_subdirectory(Traffic-Analyzer)
 
-add_executable(ProxyInterceptor Main.cpp)
+add_executable(NetworkTools Main.cpp)
 
-target_link_libraries(ProxyInterceptor PRIVATE AppInterceptor)
+target_link_libraries(NetworkTools PRIVATE 
+	ProxyTool
+	#AppAnalyzer
+)

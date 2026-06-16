@@ -4,5 +4,6 @@ add_subdirectory(cli)
 add_subdirectory(packet)
 add_subdirectory(stats)
 
-add_library(TrafficAnalyzer LaunchAnalyzer.cpp)
+add_library(TrafficAnalyzer INTERFACE)
+
 

@@ -22,14 +22,10 @@ enum class TransportProtocol
 
 enum class ApplicationProtocol 
 {
-    HTTP,
-    HTTPS,
-    DNS,
-    FTP,
-    SSH,
-    SMTP,
-    QUIC,
-    NTP,
+    HTTP, HTTPS,
+    DNS, FTP,
+    SSH, SMTP,
+    QUIC, NTP,
     UNKNOWN
 };
 
@@ -47,6 +43,8 @@ struct class Packet
     uint32_t totalLen;
     uint16_t payloadLen;
 
+    const uint8_t* payloadPtr;
+
     Packet(IPVersion ip, TransportProtocol transP, const std::string& src, 
             const std::string& dst, int16_t src_port, uint16_t dst_port, 
             uint32_t total_len, uint16_t payload, const uint8_t *payload_ptr)
@@ -54,7 +52,7 @@ struct class Packet
 		  src_port(src_port), dst_port(dst_port), total_len(total_len), payload_len(payload), payload_ptr(payload_ptr) 
     {
 		application_protocol = get_application_protocol();
-		this->payload_ptr = nullptr;
+		this->payloadPtr = nullptr;
 	}
 
 private:

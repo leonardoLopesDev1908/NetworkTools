@@ -5,6 +5,8 @@
 #include <netinet/igmp.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 #include <string>
 
 
@@ -42,7 +44,7 @@ class IPv4 : public IP
 {
 private:
 	const ip *ipHdr = nullptr;
-	int ipHdrLen = 0;
+	uint8_t ipHdrLen = 0;
 	uint16_t srcPort = 0;
 	uint16_t destPort = 0;
 

@@ -29,7 +29,7 @@ enum class ApplicationProtocol
     UNKNOWN
 };
 
-struct class Packet
+struct Packet
 {
     IPVersion ipVersion;
     TransportProtocol transProtocol;
@@ -43,15 +43,15 @@ struct class Packet
     uint32_t totalLen;
     uint16_t payloadLen;
 
-    const uint8_t* payloadPtr;
+    const uint8_t* payloadPtr = nullptr;
 
     Packet(IPVersion ip, TransportProtocol transP, const std::string& src, 
             const std::string& dst, int16_t src_port, uint16_t dst_port, 
             uint32_t total_len, uint16_t payload, const uint8_t *payload_ptr)
-		: ip_version(version), transport_protocol(protocol), src(std::move(src)), dst(std::move(dst)),
-		  src_port(src_port), dst_port(dst_port), total_len(total_len), payload_len(payload), payload_ptr(payload_ptr) 
+		: ipVersion(ip), transProtocol(transP), source(std::move(src)), destiny(std::move(dst)),
+		  srcPort(src_port), dstPort(dst_port), totalLen(total_len), payloadLen(payload), payloadPtr(payload_ptr) 
     {
-		application_protocol = get_application_protocol();
+		appProtocol = getApplicationProtocol();
 		this->payloadPtr = nullptr;
 	}
 

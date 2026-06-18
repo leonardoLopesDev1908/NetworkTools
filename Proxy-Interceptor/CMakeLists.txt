@@ -6,4 +6,8 @@ add_subdirectory(message)
 add_subdirectory(proxy)
 
 add_library(ProxyTool INTERFACE)
-target_link_libraries(ProxyTool INTERFACE AppInterceptor)
+
+target_link_libraries(ProxyTool INTERFACE 
+	Platform	
+	AppInterceptor
+)

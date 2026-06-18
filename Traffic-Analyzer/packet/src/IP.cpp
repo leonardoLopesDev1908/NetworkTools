@@ -1,60 +1,43 @@
 #include "IP.h"
+#include "Platform.h" 
+
+#include <array>
+#include <cstdio>
+#include <stdexcept>
 
 const std::string& IP::getSource() const { return src; }
 const std::string& IP::getDestiny() const { return dst; }
-
-TranportProtocol IP::getProtocol() const { return transport; }
+TransportProtocol IP::getProtocol() const { return transport; }
 uint16_t IP::getPayloadLen() const { return payloadLen; }
 
-
-explicit IPv4::IPv4(const u_char* data)
-{ 
-    ipHdr = data;
-    char transportStr;
-
-	//from half of the first byte
-	ipHdrLen = (data[0] << 2) >> 2; 
-	
-	//from byte 3 to byte 4
-    memcpy(&payloadLen, data + 3, 2);
-    payloadLen -= ipHdrLen;	
-
-	//10th byte
-    transportStr = data[9];
-
-	//All the fourth line (4 bytes)
-    memcpy(&src, data + 12, 4);
-
-	//All the fifth line (4 bytes)
-	memcpy(&dst, data + 16, 4);
-
-}
-
-uint16_t IPv4::getSrcPort() const override { return srcPort; }
-
-uint16_t IPv4::getDestPort() const override { return dstPort; }
-
-void IPv4::handleTcp() override
+IPv4::IPv4(const uint8_t* data)
+    : ipHdr(reinterpret_cast<const ip*>(data)), ipHdrLen(static_cast<uint8_t>(ipHdr->ip_hl) * 4)
 {
+#ifdef _WIN32
+    auto result = platformInit();
+    if (!result.has_value()) 
+        throw std::runtime_error(result.error());
+#endif
 
+    if (ipHdrLen < 20)
+    {
+        throw std::runtime_error("Load ip failed: header length too short");
+    }
+
+    std::array<char, INET_ADDRSTRLEN> srcBuf{};
+    inet_ntop(AF_INET, &(ipHdr->ip_src), srcBuf.data(), srcBuf.size());
+    src = srcBuf.data();
+
+    std::array<char, INET_ADDRSTRLEN> dstBuf{};
+    inet_ntop(AF_INET, &(ipHdr->ip_dst), dstBuf.data(), dstBuf.size());
+    dst = dstBuf.data();
 }
 
-void IPv4::handleUdp() override
-{
+uint16_t IPv4::getSourcePort() const { return srcPort; }
+uint16_t IPv4::getDestinyPort() const { return destPort; }
 
-}
-
-void IPv4::handleIcmp() override
-{
-
-}
-
-void IPv4::handleIcmpv6() override
-{
-
-}
-
-void IPv4::handleIgmp() override
-{
-
-}
+void IPv4::handleTcp() {}
+void IPv4::handleUdp() {}
+void IPv4::handleIcmp() {}
+void IPv4::handleIcmp6() {}
+void IPv4::handleIgmp() {}

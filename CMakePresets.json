@@ -49,7 +49,7 @@
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
-                "rhs": "Linux" // ← corrigido
+                "rhs": "Linux" 
             }
         }
     ]

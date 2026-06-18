@@ -1,5 +1,5 @@
-#ifndef COMMON_UTILITIES_H
-#define COMMON_UTILITIES_H
+#ifndef PLATFORM_H
+#define PLATFORM_H
 
 #include <expected>
 #include <iostream>
@@ -12,6 +12,20 @@
 #include <Windows.h>
 #include <ws2tcpip.h>
 // NOLINTEND(llvm-include-order)
+
+struct ip
+{
+    uint8_t ip_hl : 4, ip_v : 4;
+    uint8_t ip_tos;
+    uint16_t ip_len;
+    uint16_t ip_id;
+    uint16_t ip_off;
+    uint8_t ip_ttl;
+    uint8_t ip_p;
+    uint16_t ip_sum;
+    struct in_addr ip_src;
+    struct in_addr ip_dst;
+};
 
 using SocketType = SOCKET;
 constexpr SocketType INVALID_S = INVALID_SOCKET;
@@ -33,8 +47,16 @@ inline bool isInvalid(SocketType s) { return s == INVALID_SOCKET; }
 inline bool isSocketError(SocketType s) { return s == SOCKET_ERROR; }
 
 #elif __linux__
+#include <arpa/inet.h>
 #include <netdb.h>
+#include <netinet/icmp6.h>
+#include <netinet/igmp.h>
 #include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/ip6.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <vector>

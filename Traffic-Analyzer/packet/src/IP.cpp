@@ -149,3 +149,20 @@ IPv6::IPv6(const uint8_t* data)
 
     ptr = nullptr;
 }
+
+uint16_t IPv6::getSourcePort() { return srcPort; }
+
+uint16_t IPv6::getDestinyPort() { return destPort; }
+
+void IPv6::handleTcp()
+{
+
+}
+
+void IPv6::handleUdp() {}
+
+void IPv6::handleIcmp() {}
+
+void IPv6::handleIcmp6() {}
+
+void IPv6::handleIgmp() {}

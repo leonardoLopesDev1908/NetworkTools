@@ -94,13 +94,16 @@ struct ip6_hdr
     struct in6_addr ip6_dst; /* destination address */
 };
 
-#define ip6_nxt ip6_ctlun.ip6_un1.ip6_un1_nxt
+//Struct for IPv6 header extensions (HOPOPTS, ROUTING DSTOPTS)
+//Ptr arith -> (ptr + 1) + 8 
 struct ip6_ext
 {
     uint8_t ip6e_nxt; /* next header.  */
-    uint8_t ip6e_len; /* length in units of 8 octets.  */
+    uint8_t ip6e_len; /* length in units of 8 octets.*/
 };
 
+//Struct for IPv6 header extension FRAGMENT
+//Ptr arith -> sizeof(ip6_frag) as this headers has 8 bytes
 struct ip6_frag
 {
     uint8_t ip6f_nxt;      /* next header */

@@ -45,18 +45,19 @@ struct Packet
 
     const uint8_t* payloadPtr = nullptr;
 
-    Packet(IPVersion ip, TransportProtocol transP, const std::string& src, 
-            const std::string& dst, int16_t src_port, uint16_t dst_port, 
-            uint32_t total_len, uint16_t payload, const uint8_t *payload_ptr)
-		: ipVersion(ip), transProtocol(transP), source(std::move(src)), destiny(std::move(dst)),
-		  srcPort(src_port), dstPort(dst_port), totalLen(total_len), payloadLen(payload), payloadPtr(payload_ptr) 
+    Packet(IPVersion ip, TransportProtocol transP, const std::string& src, const std::string& dst,
+           int16_t src_port, uint16_t dst_port, uint32_t total_len, uint16_t payload,
+           const uint8_t* payload_ptr)
+        : ipVersion(ip), transProtocol(transP), source(std::move(src)), destiny(std::move(dst)),
+          srcPort(src_port), dstPort(dst_port), totalLen(total_len), payloadLen(payload),
+          payloadPtr(payload_ptr)
     {
-		appProtocol = getApplicationProtocol();
-		this->payloadPtr = nullptr;
-	}
+        appProtocol = getApplicationProtocol();
+        this->payloadPtr = nullptr;
+    }
 
-private:
-    ApplicationProtocol getApplicationProtocol();             
-}
+  private:
+    ApplicationProtocol getApplicationProtocol();
+};
 
 #endif 

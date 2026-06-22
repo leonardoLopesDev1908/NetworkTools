@@ -39,7 +39,7 @@ ApplicationProtocol Packet::getApplicationProtocol()
         return ApplicationProtocol::UNKNOWN;
     }
     
-    if(transProtocol == TranportProtocol::TCP)
+    if(transProtocol == TransportProtocol::TCP)
     {
         switch(dstPort)
         {
@@ -66,5 +66,5 @@ ApplicationProtocol Packet::getApplicationProtocol()
         }
     }
 
-    return ApplicationProtocol::UNKWONW;
+    return ApplicationProtocol::UNKNOWN;
 }

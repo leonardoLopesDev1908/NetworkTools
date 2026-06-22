@@ -10,4 +10,7 @@ target_include_directories(CHandler PUBLIC
 	${CHANDLER_INCLUDE_DIR}
 )
 
-target_link_libraries(CHandler PUBLIC CommonUtilities Message Parser)
+target_link_libraries(CHandler PUBLIC 
+	CommonUtilities Message 
+	Parser Platform
+)

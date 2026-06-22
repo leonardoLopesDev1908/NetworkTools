@@ -23,8 +23,8 @@ class Intercept
   private:
     ftxui::ScreenInteractive* m_screen = nullptr;
 
-    bool m_cancelled;
-    bool m_resolved;
+    bool m_cancelled = false;
+    bool m_resolved = false;
     Message m_edited;
 
     std::mutex m_mutex;

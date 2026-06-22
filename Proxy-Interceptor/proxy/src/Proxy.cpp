@@ -94,7 +94,7 @@ std::expected<void, std::string> Proxy::start()
         auto newConn = std::make_shared<CHandler>(std::move(clientSocket), m_messages, m_errorQueue,
                                                   m_intercept, &m_keepMessages);
         {
-            std::lock_guard<std::mutex> lck(m_handlersMutex);
+            std::scoped_lock<std::mutex> lck(m_handlersMutex);
             m_handlers.push_back(newConn);
         }
 
@@ -114,7 +114,7 @@ void Proxy::stop()
         closeSocket(s);
 
     {
-        std::lock_guard<std::mutex> lck(m_handlersMutex);
+        std::scoped_lock<std::mutex> lck(m_handlersMutex);
         for (auto& handler : m_handlers)
             handler->stop();
         m_handlers.clear();

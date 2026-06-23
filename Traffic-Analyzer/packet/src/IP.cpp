@@ -105,10 +105,12 @@ IPv6::IPv6(const uint8_t* data)
     std::array<char, INET6_ADDRSTRLEN> srcBuf{};
     inet_ntop(AF_INET6, &ipHdr->ip6_src, srcBuf.data(), sizeof(srcBuf));
     src = srcBuf.data();
+    ipSource = ipHdr->ip6_src;
 
     std::array<char, INET6_ADDRSTRLEN> dstBuf{};
     inet_ntop(AF_INET6, &ipHdr->ip6_dst, dstBuf.data(), sizeof(dstBuf));
     dst = dstBuf.data();
+    ipDest = ipHdr->ip6_dst;
 
     while (true)
     {
@@ -156,10 +158,34 @@ uint16_t IPv6::getDestinyPort() { return destPort; }
 
 void IPv6::handleTcp()
 {
+    const auto* tcp = reinterpret_cast<const tcphdr *>(ptr);
 
+    srcPort = ntohs(tcp->source);
+    destPort = ntohs(tcp->dest);
+
+    const auto tcpHdrLen = static_cast<std::size_t>(tcp->doff) * 4U;
+
+    payloadPtr = reinterpret_cast<const uint8_t *>(tcp) + tcpHdrLen;  
+    
+    payloadLen = static_cast<uint16_t>(ipHdr->ip_len) - ipHdrLen - tcpHdrLen;
+    transport = TransportProtocol::TCP;
 }
 
-void IPv6::handleUdp() {}
+void IPv6::handleUdp() 
+{
+    const auto* udp = reinterpret_cast<const udphdr *>(ptr);
+    
+    srcPort = ntohs(udp->source);
+    destPort = ntohs(udp->dest);
+
+    if(static_cast<std::size_t>(udp->len) >= 8)
+    {
+        payloadPtr = reinterpret_cast<const uint8_t *>(ptr) + 8U;
+        payloadLen = static_cast<uint16_t>(ipHdr->ip6_ctlun.ip6.un1.plen;
+    }
+
+    transport = TransportProtocol::UDP;
+}
 
 void IPv6::handleIcmp() {}
 

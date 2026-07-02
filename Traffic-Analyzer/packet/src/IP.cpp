@@ -13,7 +13,8 @@ TransportProtocol IP::getProtocol() const { return transport; }
 uint16_t IP::getPayloadLen() const { return payloadLen; }
 
 IPv4::IPv4(const uint8_t* data)
-    : ipHdr(reinterpret_cast<const ip*>(data)), ipHdrLen(static_cast<uint8_t>(ipHdr->ip_hl) * 4)
+    : ipHdr(reinterpret_cast<const ip*>(data)), 
+    ipHdrLen(static_cast<uint8_t>(ipHdr->ip_hl) * 4)
 {
     if (ipHdrLen < 20)
     {
@@ -98,7 +99,7 @@ void IPv4::handleIgmp() { transport = TransportProtocol::IGMP; }
 // ---- IPv6 ----
 IPv6::IPv6(const uint8_t* data) 
     : ipHdr(reinterpret_cast<const ip6_hdr*>(data)),
-      ptr(reinterpret_cast<const uint8_t*>(ipHdr + 1))
+      packetPtr(reinterpret_cast<const uint8_t*>(ipHdr + 1))
 {
     uint8_t hdr = ipHdr->ip6_ctlun.ip6_un1.ip6_un1_nxt;
 
@@ -136,20 +137,22 @@ IPv6::IPv6(const uint8_t* data)
         case IPPROTO_ROUTING:
         case IPPROTO_DSTOPTS:
         {
-            const auto* ext = reinterpret_cast<const ip6_ext*>(ptr);
+            const auto* ext = reinterpret_cast<const ip6_ext*>(packetPtr);
             hdr = ext->ip6e_nxt;
-            ptr += (static_cast<std::size_t>(ext->ip6e_len) + 1U) * 8U;
+            packetPtr += (static_cast<std::size_t>(ext->ip6e_len) + 1U) * 8U; //advance pointer
+            ipExtLen += (static_cast<std::size_t>(ext->ip6e_len) + 1U) * 8U; //save extension header length
             break;
         }
         case IPPROTO_FRAGMENT:
-            const auto* frag = reinterpret_cast<const ip6_frag*>(ptr);
+            const auto* frag = reinterpret_cast<const ip6_frag*>(packetPtr);
             hdr = frag->ip6f_nxt;
-            ptr += sizeof(ip6_frag);
+            packetPtr += sizeof(ip6_frag);
+            ipExtLen += sizeof(ip6_frag);
             break;
         }
     }
 
-    ptr = nullptr;
+    packetPtr = nullptr;
 }
 
 uint16_t IPv6::getSourcePort() { return srcPort; }
@@ -158,37 +161,70 @@ uint16_t IPv6::getDestinyPort() { return destPort; }
 
 void IPv6::handleTcp()
 {
-    const auto* tcp = reinterpret_cast<const tcphdr *>(ptr);
+    /* if (packetPtr + sizeof(tcphdr) > bufferEnd) 
+    //Later: receive the end of buffer by constructor
+    {
+        printf("Malformed TCP header\n");
+        packetPtr = nullptr;
+        return;
+    }*/
+    const auto* tcp = reinterpret_cast<const tcphdr *>(packetPtr);
+    const auto tcpHdrLen = static_cast<std::size_t>(tcp->doff) * 4U;
 
     srcPort = ntohs(tcp->source);
     destPort = ntohs(tcp->dest);
 
-    const auto tcpHdrLen = static_cast<std::size_t>(tcp->doff) * 4U;
+    //if (!(packetPtr + tcpHdrLen + > packetEnd))
+    auto plen = ntohs(ipHdr->ip6_ctlun.ip6_un1.ip6_un1_plen);
 
     payloadPtr = reinterpret_cast<const uint8_t *>(tcp) + tcpHdrLen;  
-    
-    payloadLen = static_cast<uint16_t>(ipHdr->ip_len) - ipHdrLen - tcpHdrLen;
+    payloadLen = static_cast<uint16_t>(plen) - tcpHdrLen;
+
     transport = TransportProtocol::TCP;
+    packetPtr = nullptr;
 }
 
 void IPv6::handleUdp() 
 {
-    const auto* udp = reinterpret_cast<const udphdr *>(ptr);
-    
+    /* if (packetPtr + sizeof(udphdr) > bufferEnd)
+    //Later: receive the end of buffer by constructor
+    {
+        printf("Malformed UDP header\n");
+        packetPtr = nullptr;
+        return;
+    }*/
+    const auto* udp = reinterpret_cast<const udphdr *>(packetPtr);
+
     srcPort = ntohs(udp->source);
     destPort = ntohs(udp->dest);
 
-    if(static_cast<std::size_t>(udp->len) >= 8)
+    if(ntohs(udp->len) >= 8U)
     {
-        payloadPtr = reinterpret_cast<const uint8_t *>(ptr) + 8U;
-        payloadLen = static_cast<uint16_t>(ipHdr->ip6_ctlun.ip6.un1.plen;
+        payloadPtr = reinterpret_cast<const uint8_t *>(packetPtr) + 8U;
+        payloadLen = static_cast<uint16_t>(
+            ntohs(ipHdr->ip6_ctlun.ip6_un1.ip6_un1_plen)
+        ) - 8U;
     }
 
     transport = TransportProtocol::UDP;
+    packetPtr = nullptr;
 }
 
-void IPv6::handleIcmp() {}
+void IPv6::handleIcmp() 
+{
+    transport = TransportProtocol::ICMP;
+    packetPtr = nullptr;
+}
 
-void IPv6::handleIcmp6() {}
+void IPv6::handleIcmp6() 
+{
+    transport = TransportProtocol::ICMP6;
+    payloadLen = ntohs(ipHdr->ip6_ctlun.ip6_un1.ip6_un1_plen) - sizeof(icmp6_hdr);
+    packetPtr = nullptr;
+}
 
-void IPv6::handleIgmp() {}
+void IPv6::handleIgmp()
+{  
+    transport = TransportProtocol::IGMP;
+    packetPtr = nullptr;
+}

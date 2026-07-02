@@ -71,14 +71,16 @@ protected:
 private:
     const ip6_hdr *ipHdr = nullptr;
 	int ipHdrLen = 40;
+    int ipExtLen = 0;
 
-	in6_addr Source = {};
+	in6_addr ipSource = {};
 	in6_addr ipDest = {};
 
 	uint16_t srcPort = 0;
 	uint16_t destPort = 0;
 
-	const uint8_t *ptr = nullptr;
+	const uint8_t *packetPtr = nullptr;
+    const uint8_t* packetEnd = nullptr;
 
 public:
 	uint16_t getSourcePort() override;

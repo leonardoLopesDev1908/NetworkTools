@@ -55,27 +55,6 @@ struct udphdr
     uint16_t check;
 };
 
-struct icmphdr
-{
-    uint8_t type;
-    uint8_t code;
-    uint16_t checksum;
-    union
-    {
-        struct
-        {
-            uint16_t id;
-            uint16_t sequence;
-        } echo;
-        uint32_t gateway;
-        struct
-        {
-            uint16_t __unused;
-            uint16_t mtu;
-        } frag;
-    } un;
-};
-
 //RFC 2292: https://datatracker.ietf.org/doc/html/rfc2292#section-2.1      
 struct ip6_hdr
 {
@@ -110,6 +89,20 @@ struct ip6_frag
     uint8_t ip6f_reserved; /* reserved field */
     uint16_t ip6f_offlg;   /* offset, reserved, and flag */
     uint32_t ip6f_ident;   /* identification */
+};
+
+//https:github.com/leostratus/netinet/blob/master/icmp6.h
+struct icmp6_hdr
+{
+    uint8_t icmp6_type;   /* type field */
+    uint8_t icmp6_code;   /* code field */
+    uint16_t icmp6_cksum; /* checksum field */
+    union
+    {
+        uint32_t icmp6_un_data32[1]; /* type-specific field */
+        uint16_t icmp6_un_data16[2]; /* type-specific field */
+        uint8_t icmp6_un_data8[4];   /* type-specific field */
+    } icmp6_dataun;
 };
 
 using SocketType = SOCKET;

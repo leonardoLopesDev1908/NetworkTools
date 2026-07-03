@@ -1,4 +1,11 @@
+*NetworkTools*
 
+NetworkTools is a project with the goal to be a practical study of network security. It has two main tools to be used
+at the context of network analysis:
+  Proxy Interceptor
+  Traffic Analyzer
+
+**Proxy Interceptor**
 A lightweight cross-platform HTTP interception proxy written in modern C++.
 
 This project was created as a way to study:
@@ -45,3 +52,6 @@ Here you can enable the Keep flag to edit messages
 Page 3: edit messages
 <img width="1104" height="577" alt="Captura de tela 2026-05-26 092258" src="https://github.com/user-attachments/assets/d4b2b7cc-f515-457a-a49b-4a9a5deae057" />
 
+**Traffic Analyzer**
+This part of the project is almost entirely inspired by the Traffic Analyzer at the Cybersecurity-Projects
+repository developed by @deniskhud. It is available at: https://github.com/CarterPerez-dev/Cybersecurity-Projects/tree/main/PROJECTS/beginner/network-traffic-analyzer/cpp

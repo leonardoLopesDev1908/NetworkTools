@@ -1,9 +1,12 @@
+add_subdirectory(app)
 add_subdirectory(tui)
 add_subdirectory(capture)
-add_subdirectory(cli)
 add_subdirectory(packet)
 add_subdirectory(stats)
 
-add_library(TrafficAnalyzer INTERFACE)
+add_library(TrafficTool INTERFACE)
 
+target_link_libraries(TrafficTool INTERFACE 
+	AppAnalyzer
+)
 

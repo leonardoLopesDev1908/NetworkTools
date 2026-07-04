@@ -169,7 +169,8 @@ void IPv6::handleTcp()
         return;
     }*/
     const auto* tcp = reinterpret_cast<const tcphdr *>(packetPtr);
-    const auto tcpHdrLen = static_cast<std::size_t>(tcp->doff) * 4U;
+    const auto tcpHdrLen = static_cast<std::size_t>(tcp->doff) * 4U; 
+    //ntohs is not necessary here because doff has less than one byte size
 
     srcPort = ntohs(tcp->source);
     destPort = ntohs(tcp->dest);

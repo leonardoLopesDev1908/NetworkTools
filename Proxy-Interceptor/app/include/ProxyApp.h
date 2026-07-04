@@ -14,10 +14,10 @@
 #include <thread>
 
 
-class MainApp 
+class ProxyApp 
 {
 public:    
-    ~MainApp();
+    ~ProxyApp();
     void start();
     ftxui::Element manual_page();
     ftxui::Element input_endpoint_page();

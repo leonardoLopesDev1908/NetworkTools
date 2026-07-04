@@ -1,10 +1,10 @@
-#include "MainApp.h"
+#include "ProxyApp.h"
 
 #include <format>
 
 using namespace ftxui;
 
-MainApp::~MainApp()
+ProxyApp::~ProxyApp()
 {
     if (m_proxy)
         m_proxy->stop();
@@ -13,7 +13,7 @@ MainApp::~MainApp()
         proxyThread.join();
 }
 
-ftxui::Element MainApp::manual_page()
+ftxui::Element ProxyApp::manual_page()
 {
     switch (optionsState.selectedLanguage)
     {
@@ -120,7 +120,7 @@ ftxui::Element MainApp::manual_page()
     }
 }
 
-ftxui::Element MainApp::input_endpoint_page()
+ftxui::Element ProxyApp::input_endpoint_page()
 {
     auto errorElement = m_submitError.empty()
         ? text("")
@@ -154,7 +154,7 @@ ftxui::Element MainApp::input_endpoint_page()
     }) | border;
 }
 
-ftxui::Element MainApp::messages_menu_page()
+ftxui::Element ProxyApp::messages_menu_page()
 {
     if (!m_proxy)
     {
@@ -179,7 +179,7 @@ ftxui::Element MainApp::messages_menu_page()
     }
 }
 
-ftxui::Element MainApp::edit_messages_menu()
+ftxui::Element ProxyApp::edit_messages_menu()
 { 
     if (!btnForward)
         return text("[Error] btnForward not initialized");
@@ -212,7 +212,7 @@ ftxui::Element MainApp::edit_messages_menu()
     }) | border;
 }
 
-ftxui::Element MainApp::show_messages_menu(std::deque<Message> messages)
+ftxui::Element ProxyApp::show_messages_menu(std::deque<Message> messages)
 {
     messagesState.m_messageEntries.clear();
     for (auto it = messages.begin(); it != messages.end(); it++)
@@ -266,7 +266,7 @@ ftxui::Element MainApp::show_messages_menu(std::deque<Message> messages)
         }) | border;
 }
 
-ftxui::Element MainApp::options_page()
+ftxui::Element ProxyApp::options_page()
 {
     std::string selected_name = optionsState.languages[optionsState.selectedLanguage];
 
@@ -277,7 +277,7 @@ ftxui::Element MainApp::options_page()
     }) | border;
 }
 
-void MainApp::start() {
+void ProxyApp::start() {
 
     auto screen = ftxui::ScreenInteractive::Fullscreen();
 

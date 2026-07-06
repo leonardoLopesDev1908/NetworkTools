@@ -1,6 +1,7 @@
 #ifndef ANALYZER_APP_H
 #define ANALYZER_APP_H
 
+#include <iostream>
 
 class AnalyzerApp
 {

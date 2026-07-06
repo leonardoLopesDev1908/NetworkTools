@@ -521,3 +521,43 @@ void ProxyApp::start() {
     });
     screen.Loop(app);
 }
+
+
+void ProxyApp::printHelp()
+{
+    std::cout << R"(
+    ================================================================================
+       A lightweight cross-platform HTTP interception proxy written in modern C++.
+    ================================================================================
+
+      This project was created as a way to study:
+        - Network programming & socket APIs
+        - HTTP internals
+        - Concurrent systems & proxy architecture
+        - Terminal User Interfaces (TUI) in C++
+
+      The application allows intercepting, visualizing and forwarding HTTP 
+      messages in real-time through a terminal interface built with FTXUI.
+
+      Features:
+        [+] HTTP request interception
+        [+] Real-time message queue visualization
+        [+] Request / response inspection
+        [+] Cross-platform architecture (Windows / Linux)
+        [+] Concurrent connection handling
+        [+] Interactive terminal UI
+        [+] Manual forwarding workflow
+        [+] Message persistence ("Keep" mode)
+        [+] Modular proxy architecture
+
+      Architecture Overview:
+      The project follows a layered architecture designed to separate:
+        -> UI
+        -> Networking
+        -> Parsing
+        -> Message management
+        -> Platform-specific socket handling
+    
+    ================================================================================
+    )";
+}

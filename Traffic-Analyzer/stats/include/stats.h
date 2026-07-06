@@ -5,22 +5,17 @@
 
 #include <chrono>
 #include <map>
+#include <mutex>
 #include <queue>
 #include <unordered_map>
 
-struct trafficStats
+struct BandwidthPoint
 {
-    uint32_t totalBytes = 0;
-    uint32_t totalPackets = 0;
+    double timestamp;
+    double bytesPerSecond;
 };
 
-struct protocolStats 
-{
-    uint32_t bytes = 0;
-    uint32_t packets = 0;
-};
-
-struct IPStats 
+struct IPStats
 {
     uint32_t bytesReceived = 0;
     uint32_t bytesSent = 0;
@@ -29,34 +24,73 @@ struct IPStats
     uint32_t packetsSent = 0;
 };
 
+struct protocolStats
+{
+    uint32_t bytes = 0;
+    uint32_t packets = 0;
+};
+
+struct trafficStats
+{
+    uint32_t totalBytes = 0;
+    uint32_t totalPackets = 0;
+};
+
 struct StatsSnapshot
 {
     std::vector<std::vector<std::string>> applicationRow;
     std::vector<std::vector<std::string>> transportRow;
-    std::vector<std::vector<std::string>> rows;
+    std::vector<std::vector<std::string>> ipRows;
     std::vector<std::vector<std::string>> pairRows;
     std::vector<std::vector<std::string>> packetRows;
+        
+    uint32_t currentBytes = 0;
+    uint32_t totalBytes = 0;
+    uint32_t totalPackets = 0;
 
-
+    std::vector<BandwidthPoint> bandwidthHistory;
+    double bandwidth = 0;
+    double maxBandwidth = 0;
 };
 
 
 class Stats
 {
-    std::chrono::steady_clock::time_point clock;
+    std::mutex mtx;
+    std::chrono::steady_clock::time_point lastTick;
         
     std::unordered_map<TransportProtocol, protocolStats> transportMap;
     std::unordered_map<ApplicationProtocol, protocolStats> applicationMap;
     std::unordered_map<std::string, IPStats> ipMap;
 
-    std::map<std::pair<std::string, std::string>, protocolMap>> pairs;
+    std::map<std::pair<std::string, std::string>, protocolStats> pairs;
 
     std::deque<Packet> packets;
     
     StatsSnapshot snapshot;
 public:
-    void addPacket(Packet& packet);
+    Stats();
 
+    void push(const Packet& packet)
+    {
+        std::scoped_lock<std::mutex> lck(mtx);
+        packets.push_back(packet);
+    }
+
+    void addPacket(const Packet& packet);
+
+    StatsSnapshot getSnaphot() 
+    { 
+        std::scoped_lock<std::mutex> lck(mtx);
+        return snapshot; 
+    }
+
+    void updateAppStats();
+    void updateBandwidth();
+    void updateIpStats();
+    void updatePackets();
+    void updatePairs();
+    void updateTransportStats();
 };
 
 

@@ -17,6 +17,8 @@ FetchContent_Declare(ftxui
 FetchContent_MakeAvailable(ftxui)
 
 find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(PkgConfig REQUIRED) 
+pkg_check_modules(PCAP REQUIRED libpcap)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

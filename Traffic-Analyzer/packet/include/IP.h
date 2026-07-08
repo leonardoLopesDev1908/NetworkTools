@@ -61,13 +61,6 @@ public:
 
 class IPv6 : public IP
 {
-protected:
-	void handleTcp() override;
-	void handleUdp() override;
-	void handleIcmp() override;
-	void handleIcmp6() override;
-	void handleIgmp() override;
-
 private:
     const ip6_hdr *ipHdr = nullptr;
 	int ipHdrLen = 40;
@@ -81,6 +74,13 @@ private:
 
 	const uint8_t *packetPtr = nullptr;
     const uint8_t* packetEnd = nullptr;
+
+protected:
+	void handleTcp() override;
+	void handleUdp() override;
+	void handleIcmp() override;
+	void handleIcmp6() override;
+	void handleIgmp() override;
 
 public:
 	uint16_t getSourcePort() override;

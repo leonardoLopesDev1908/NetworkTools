@@ -40,12 +40,13 @@
         },
         {
             "name": "linux-base",
-            "hidden": true,
+            "hidden": false,
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "installDir": "${sourceDir}/out/install/${presetName}",
             "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "/usr/bin/g++"
+                "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+                "CMAKE_TOOLCHAIN_FILE": "/home/leona/vcpkg/scripts/buildsystems/vcpkg.cmake"
             },
             "condition": {
                 "type": "equals",

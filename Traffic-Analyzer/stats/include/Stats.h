@@ -68,6 +68,7 @@ class Stats
     std::deque<Packet> packets;
     
     StatsSnapshot snapshot;
+
 public:
     Stats();
 

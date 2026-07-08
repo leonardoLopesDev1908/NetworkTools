@@ -2,6 +2,7 @@
     "name": "networktools",
     "version": "0.1.0",
     "dependencies": [
-        "boost-program-options"
+        "boost-program-options",
+	"libpcap"
     ]
 }

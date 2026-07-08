@@ -41,7 +41,7 @@ IPv4::IPv4(const uint8_t* data)
             IPv4::handleIcmp();
             break;
         case IPPROTO_ICMPV6:
-            IPv4::handleIcmp6;
+            IPv4::handleIcmp6();
             break;
         case IPPROTO_IGMP:
             IPv4::handleIgmp();

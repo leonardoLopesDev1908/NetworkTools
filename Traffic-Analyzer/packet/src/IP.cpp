@@ -54,6 +54,7 @@ IPv4::IPv4(const uint8_t* data)
 
 uint16_t IPv4::getSourcePort() { return srcPort; }
 uint16_t IPv4::getDestinyPort() { return destPort; }
+uint8_t IPv4::getHeaderLen() const { return ipHdrLen; }
 
 void IPv4::handleTcp() 
 {  

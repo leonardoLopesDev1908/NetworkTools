@@ -4,44 +4,55 @@
 #include "IP.h"
 #include "Packet.h"
 #include "Platform.h"
+#include "Pcap.h"
 #include "Stats.h"
 
 #include <atomic>
+#include <functional>
 #include <memory>
-#include <pcap/pcap.h>
 #include <thread>
 
 class Capture
 {
-    char errBuf[PCAP_ERRBUF_SIZE]{};
+    char errBuf[PCAP_ERRBUF_SIZE] = {};
     std::string device;
 
     int packetsLimit{};
+
+    int linkHdrType{};
+    unsigned int linkLen{};
+
     //std::unique_ptr<type, decltype(&close_func)> name{nullptr, &close_func};
     std::unique_ptr<pcap_t, decltype(&pcap_close)> handle {nullptr, &pcap_close};
-
+    
     struct bpf_program fp{};
+    bpf_u_int32 netmask;
+
+    uint16_t offset = 0;
+    std::function<uint16_t(const uint8_t*)> getEtherType;
+
     std::string filterExp;
 
-    pcap_if_t *interfaces = nullptr;
 
     std::atomic<bool> running{false};
-    std::thread;
+    std::thread thread;
     Stats* stats = nullptr;
 
 private:
 
+    void dataLink(int type);
     void stop();
 
 public:
             
-    void initialize();
     void start();
     void config(const std::string& device, int limit, Stats* stats,
-            const std::string& filter);
+                         const std::string& filterExp);
 
-    void callback(uint8_t* user, const struct pcap_pkthdr *pkthdr, 
+    static void callback(uint8_t* user, const struct pcap_pkthdr *pkthdr, 
               const uint8_t* packetd_ptr);
+
+    void treatPacket(const struct pcap_pkthdr* pkthdr, const uint8_t* packet);
     
     bool isRunning() { return running; }
     void setRunning(bool flag) { running = flag; }

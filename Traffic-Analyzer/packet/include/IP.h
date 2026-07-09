@@ -54,6 +54,7 @@ protected:
 public:
 	uint16_t getSourcePort() override;
 	uint16_t getDestinyPort() override;
+    uint8_t getHeaderLen() const;
 
 	explicit IPv4(const uint8_t *data);
 

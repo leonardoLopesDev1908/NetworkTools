@@ -1,0 +1,3 @@
+considerar substituir reinterpret_cast por memcpy
+
+

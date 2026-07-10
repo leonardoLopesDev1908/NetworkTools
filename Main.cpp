@@ -1,5 +1,6 @@
-#include "ProxyApp.h"
 #include "AnalyzerApp.h"
+#include "Platform.h"
+#include "ProxyApp.h"
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;

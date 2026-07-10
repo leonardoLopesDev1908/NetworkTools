@@ -17,6 +17,17 @@ FetchContent_Declare(ftxui
 FetchContent_MakeAvailable(ftxui)
 
 find_package(Boost REQUIRED COMPONENTS program_options)
+	
+if(WIN32)
+    set(PCAP_INCLUDE_DIRS "C:/Program Files/Npcap/Include")
+    set(PCAP_LIBRARIES 
+        "C:/Program Files/Npcap/Lib/Packet.lib"
+        "C:/Program Files/Npcap/Lib/wpcap.lib"
+    )
+else()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(PCAP REQUIRED libpcap)
+endif()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -25,7 +36,7 @@ add_subdirectory(Common)
 add_subdirectory(Proxy-Interceptor)
 add_subdirectory(Traffic-Analyzer)
 
-add_executable(NetworkTools Main.cpp)
+add_executable(NetworkTools Main.cpp "Common/include/Pcap.h")
 
 target_link_libraries(NetworkTools PRIVATE 
 	Boost::program_options

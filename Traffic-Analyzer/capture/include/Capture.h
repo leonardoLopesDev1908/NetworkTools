@@ -33,7 +33,6 @@ class Capture
 
     std::string filterExp;
 
-
     std::atomic<bool> running{false};
     std::thread thread;
     Stats* stats = nullptr;

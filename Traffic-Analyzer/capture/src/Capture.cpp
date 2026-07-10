@@ -93,7 +93,7 @@ void Capture::dataLink(int type)
     }
 }
 
-static uint16_t getFamilyByEther(const uint32_t type)
+static uint16_t getEtherByFamily(const uint32_t type)
 { 
     switch (type)
     {

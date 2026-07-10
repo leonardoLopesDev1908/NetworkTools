@@ -3,6 +3,7 @@
 
 #include <expected>
 #include <iostream>
+#include <pcap/pcap.h>
 
 #define NOMINMAX
 
@@ -128,6 +129,7 @@ inline bool isSocketError(SocketType s) { return s == SOCKET_ERROR; }
 #elif __linux__
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <netinet/ether.h>
 #include <netinet/icmp6.h>
 #include <netinet/igmp.h>
 #include <netinet/in.h>

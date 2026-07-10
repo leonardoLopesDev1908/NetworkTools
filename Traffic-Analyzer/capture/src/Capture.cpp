@@ -2,7 +2,20 @@
 #include "Packet.h"
 #include "Protocols.h"
 
-Capture::~Capture() { stop(); }
+Capture::~Capture(){ stop(); }
+
+static uint16_t getEtherByFamily(const uint32_t type)
+{ 
+    switch (type)
+    {
+    case AF_INET:
+        return ETHERTYPE_IP;
+    case AF_INET6:
+        return ETHERTYPE_IPV6;
+    default:
+        return 0;
+    }
+}
 
 void Capture::stop() {}
 
@@ -63,7 +76,7 @@ void Capture::dataLink(int type)
         getEtherType = [](const uint8_t* p)
         {
             const uint32_t ip = *reinterpret_cast<const uint32_t*>(p);
-            return getFamilyByEther(ip);
+            return getEtherByFamily(ip);
         };
         break;
     case DLT_LOOP:
@@ -71,7 +84,7 @@ void Capture::dataLink(int type)
         getEtherType = [](const uint8_t* p)
         { 
             const uint32_t ip = ntohs(*reinterpret_cast<const uint32_t*>(p));
-            return getFamilyByEther(ip); 
+            return getEtherByFamily(ip); 
         };
         break;
     case DLT_LINUX_SLL:
@@ -90,19 +103,6 @@ void Capture::dataLink(int type)
         break;
     default:
         throw std::runtime_error("Data link not supported");
-    }
-}
-
-static uint16_t getEtherByFamily(const uint32_t type)
-{ 
-    switch (type)
-    {
-    case AF_INET:
-        return ETHERTYPE_IP;
-    case AF_INET6:
-        return ETHERTYPE_IPV6;
-    default:
-        return 0;
     }
 }
 

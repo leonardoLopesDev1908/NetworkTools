@@ -2,6 +2,50 @@
 
 Stats::Stats() : lastTick(std::chrono::steady_clock::now()) {}
 
+const char* transportToStr(TransportProtocol transport)
+{
+    switch (transport)
+    {
+    case TransportProtocol::TCP:
+        return "TCP";
+    case TransportProtocol::UDP:
+        return "UDP";
+    case TransportProtocol::ICMP:
+        return "ICMP";
+    case TransportProtocol::ICMP6:
+        return "ICMP6";
+    case TransportProtocol::IGMP:
+        return "IGMP";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+const char* appToStr(ApplicationProtocol app)
+{
+    switch (app)
+    {
+    case ApplicationProtocol::HTTP:
+        return "HTTP";
+    case ApplicationProtocol::HTTPS:
+        return "HTTPS";
+    case ApplicationProtocol::DNS:
+        return "DNS";
+    case ApplicationProtocol::FTP:
+        return "FTP";
+    case ApplicationProtocol::SSH:
+        return "SSH";
+    case ApplicationProtocol::SMTP:
+        return "SMTP";
+    case ApplicationProtocol::QUIC:
+        return "QUIC";
+    case ApplicationProtocol::NTP:
+        return "NTP";
+    default:
+        return "UNKNOWN";
+    }
+}
+
 void Stats::addPacket(const Packet& packet)
 {	
     std::scoped_lock<std::mutex> lck(mtx);
@@ -88,7 +132,7 @@ void Stats::updatePackets()
     std::scoped_lock<std::mutex> lck(mtx);
     snapshot.packetRows.clear();
     snapshot.packetRows.push_back(
-        {"IP Version", "Trasnport protocol", "Source", "Destination", "App protocol"}
+        {"IP Version", "Transport protocol", "Source", "Destination", "App protocol"}
     );
 
     for (int i = 0; i < 50; i++)
@@ -145,46 +189,3 @@ void Stats::updateTransportStats()
     }
 }
 
-static const char* transportToStr(TransportProtocol transport)
-{
-    switch (transport)
-    {
-    case TransportProtocol::TCP:
-        return "TCP";
-    case TransportProtocol::UDP:
-        return "UDP";
-    case TransportProtocol::ICMP:
-        return "ICMP";
-    case TransportProtocol::ICMP6:
-        return "ICMP6";
-    case TransportProtocol::IGMP:
-        return "IGMP";
-    default:
-        return "UNKNOWN";
-    }
-}
-
-static const char* appToStr(ApplicationProtocol app)
-{
-    switch (app)
-    {
-    case ApplicationProtocol::HTTP:
-        return "HTTP";
-    case ApplicationProtocol::HTTPS:
-        return "HTTPS";
-    case ApplicationProtocol::DNS:
-        return "DNS";
-    case ApplicationProtocol::FTP:
-        return "FTP";
-    case ApplicationProtocol::SSH:
-        return "SSH";
-    case ApplicationProtocol::SMTP:
-        return "SMTP";
-    case ApplicationProtocol::QUIC:
-        return "QUIC";
-    case ApplicationProtocol::NTP:
-        return "NTP";
-    default:
-        return "UNKNOWN";
-    }
-}

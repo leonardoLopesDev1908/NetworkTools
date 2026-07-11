@@ -1,4 +1,5 @@
-#ifndef PCAP_H
+#if 0
+ifndef PCAP_H
 #define PCAP_H
 
 #ifdef _WIN32

@@ -1,4 +1,7 @@
-#ifndef INITIALIZATION_H
+
+#if 0
+
+ifndef INITIALIZATION_H
 #define INITIALIZATION_H
 
 #include <expected>
@@ -27,5 +30,5 @@ inline void platformInit() {}
 inline void platformCleanup() {}
 
 #endif
-
 #endif
+

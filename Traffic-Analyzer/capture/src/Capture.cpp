@@ -1,8 +1,21 @@
 #include "Capture.h"
 #include "Packet.h"
-#include "Protocols.h"
 
-Capture::~Capture() { stop(); }
+
+Capture::~Capture(){ stop(); }
+
+static uint16_t getEtherByFamily(const uint32_t type)
+{ 
+    switch (type)
+    {
+    case AF_INET:
+        return ETHERTYPE_IP;
+    case AF_INET6:
+        return ETHERTYPE_IPV6;
+    default:
+        return 0;
+    }
+}
 
 void Capture::stop() {}
 
@@ -63,7 +76,7 @@ void Capture::dataLink(int type)
         getEtherType = [](const uint8_t* p)
         {
             const uint32_t ip = *reinterpret_cast<const uint32_t*>(p);
-            return getFamilyByEther(ip);
+            return getEtherByFamily(ip);
         };
         break;
     case DLT_LOOP:
@@ -71,7 +84,7 @@ void Capture::dataLink(int type)
         getEtherType = [](const uint8_t* p)
         { 
             const uint32_t ip = ntohs(*reinterpret_cast<const uint32_t*>(p));
-            return getFamilyByEther(ip); 
+            return getEtherByFamily(ip); 
         };
         break;
     case DLT_LINUX_SLL:
@@ -93,19 +106,6 @@ void Capture::dataLink(int type)
     }
 }
 
-static uint16_t getEtherByFamily(const uint32_t type)
-{ 
-    switch (type)
-    {
-    case AF_INET:
-        return ETHERTYPE_IP;
-    case AF_INET6:
-        return ETHERTYPE_IPV6;
-    default:
-        return 0;
-    }
-}
-
 void Capture::start() 
 {
     handle.reset(pcap_open_live(device.c_str(), BUFSIZ, 1, 1000, errBuf));
@@ -123,7 +123,7 @@ void Capture::start()
             printf("Error: pcap_compile\n");
 
         if (pcap_setfilter(handle.get() , &fp) == 0)
-            printf("\Error: pcap_setfilter() %s", pcap_geterr(handle.get()));
+            printf("Error: pcap_setfilter() %s", pcap_geterr(handle.get()));
     }
 
     if (pcap_loop(handle.get(), packetsLimit, callback, (uint8_t*)nullptr))

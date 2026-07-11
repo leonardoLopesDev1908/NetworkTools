@@ -1,4 +1,5 @@
-#ifndef PROTOCOLS_H
+#if 0
+ifndef PROTOCOLS_H
 #define PROTOCOLS_H
 
 #include "Initialization.h"

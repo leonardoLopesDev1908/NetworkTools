@@ -4,14 +4,26 @@
 #include <expected>
 #include <iostream>
 
+
 #define NOMINMAX
 
 #ifdef _WIN32
 // NOLINTBEGIN(llvm-include-order)
+#include <pcap.h>
 #include <WinSock2.h>
 #include <Windows.h>
 #include <ws2tcpip.h>
 // NOLINTEND(llvm-include-order)
+
+struct ether_header
+{
+    u_char ether_dhost[6];
+    u_char ether_shost[6];
+    u_short ether_type;
+};
+
+constexpr uint16_t ETHERTYPE_IP = 0x0800;
+constexpr uint16_t ETHERTYPE_IPV6 = 0x86DD; 
 
 struct ip
 {
@@ -128,6 +140,7 @@ inline bool isSocketError(SocketType s) { return s == SOCKET_ERROR; }
 #elif __linux__
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <netinet/ether.h>
 #include <netinet/icmp6.h>
 #include <netinet/igmp.h>
 #include <netinet/in.h>
@@ -135,6 +148,7 @@ inline bool isSocketError(SocketType s) { return s == SOCKET_ERROR; }
 #include <netinet/ip6.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/tcp.h>
+#include <pcap/pcap.h>
 #include <netinet/udp.h>
 #include <sys/socket.h>
 #include <unistd.h>

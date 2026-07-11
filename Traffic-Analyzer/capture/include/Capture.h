@@ -43,7 +43,9 @@ private:
     void stop();
 
 public:
-            
+    
+    ~Capture();
+
     void start();
     void config(const std::string& device, int limit, Stats* stats,
                          const std::string& filterExp);

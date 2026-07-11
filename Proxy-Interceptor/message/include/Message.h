@@ -13,7 +13,7 @@
    (for requests) or a status-line (for responses)."
 */
 
-enum class Direction
+enum class Type
 {
     Inbound,
     Outbound
@@ -35,7 +35,7 @@ struct StatusLine
 
 struct Message
 {
-    Direction direction{};
+    Type type{};
     std::variant<StatusLine, RequestLine> startLine;
     std::unordered_map<std::string, std::string> headers;
     std::string body;

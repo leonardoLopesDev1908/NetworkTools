@@ -4,6 +4,8 @@
 #include "Stats.h"
 
 #include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/screen.hpp>
+#include <ftxui/component/component.hpp>
 
 class View
 {

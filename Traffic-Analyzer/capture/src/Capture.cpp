@@ -1,6 +1,6 @@
 #include "Capture.h"
 #include "Packet.h"
-#include "Protocols.h"
+
 
 Capture::~Capture(){ stop(); }
 
@@ -123,7 +123,7 @@ void Capture::start()
             printf("Error: pcap_compile\n");
 
         if (pcap_setfilter(handle.get() , &fp) == 0)
-            printf("\Error: pcap_setfilter() %s", pcap_geterr(handle.get()));
+            printf("Error: pcap_setfilter() %s", pcap_geterr(handle.get()));
     }
 
     if (pcap_loop(handle.get(), packetsLimit, callback, (uint8_t*)nullptr))

@@ -1,6 +1,9 @@
 #include "View.h"
+#include "ftxui/dom/table.hpp"
 
-ftxui::Element render(const StatsSnapshot &data, const std::string &interface, 
+using namespace ftxui;
+
+ftxui::Element View::render(const StatsSnapshot &data, const std::string &interface, 
         const std::string &filter, bool captureFinished, std::chrono::seconds timer)
 {
     auto header = renderHeader(data, interface, filter);
@@ -17,7 +20,7 @@ ftxui::Element render(const StatsSnapshot &data, const std::string &interface,
 	auto ipSection = hbox({renderIp(data) 
                     | border | size(HEIGHT, LESS_THAN, 10) 
                     | frame | vscroll_indicator, 
-                    renderbandwidth(data) | border | flex});
+                    renderBandwidth(data) | border | flex});
 
 	auto leftPanel = vbox({
 						  transportSection,
@@ -48,7 +51,7 @@ ftxui::Element render(const StatsSnapshot &data, const std::string &interface,
 	});
 }
 
-static ftxui::Element renderHeader(const StatsSnapshot &data, 
+ftxui::Element View::renderHeader(const StatsSnapshot &data, 
         const std::string &interface, const std::string& filter)
 {
 	return hbox({
@@ -59,23 +62,21 @@ static ftxui::Element renderHeader(const StatsSnapshot &data,
 			   }) | flex,
 			   separator(),
 			   renderStats(data) | flex,
-		   }) |
-		   border;
+		   }) | border;
 }
 
-static ftxui::Element renderStats(const StatsSnapshot &data)
+ftxui::Element View::renderStats(const StatsSnapshot &data)
 {
     return vbox({text("=== Traffic summary ===") | bold, 
-                text("Total packets: " + std::to_string(data.total_p)),
+                text("Total packets: " + std::to_string(data.totalPackets)),
 			    text(std::format("Total bytes  : {:.2f} MB", 
-                data.total_b / (1024.0 * 1024.0)))
-            }) |
-		    flex;
+                data.totalBytes / (1024.0 * 1024.0)))
+            }) | flex;
 }
 
-static ftxui::Element renderTransport(const StatsSnapshot &data)
+ftxui::Element View::renderTransport(const StatsSnapshot &data)
 {
-    Table table(data.transport_rows);
+    Table table(data.transportRow);
 	table.SelectAll().Border(LIGHT);
 
 	table.SelectRow(0).Decorate(bold);
@@ -86,9 +87,9 @@ static ftxui::Element renderTransport(const StatsSnapshot &data)
 	return vbox({text("=== Transport protocols === ") | bold, table.Render()}) | flex;
 }
 
-static ftxui::Element renderApplication(const StatsSnapshot &data)
+ftxui::Element View::renderApplication(const StatsSnapshot &data)
 {
-    Table table(data.app_rows);
+    Table table(data.applicationRow);
 	table.SelectAll().Border(LIGHT);
 
 	table.SelectRow(0).Decorate(bold);
@@ -99,9 +100,9 @@ static ftxui::Element renderApplication(const StatsSnapshot &data)
 	return vbox({text("=== Application protocols ===") | bold, table.Render()}) | flex;
 }
 
-static ftxui::Element renderIp(const StatsSnapshot &data)
+ftxui::Element View::renderIp(const StatsSnapshot &data)
 {
-    Table table(data.rows);
+    Table table(data.ipRows);
 	table.SelectAll().Border(LIGHT);
 
 	table.SelectRow(0).Decorate(bold);
@@ -109,27 +110,25 @@ static ftxui::Element renderIp(const StatsSnapshot &data)
 	table.SelectRow(0).Decorate(bold);
 	table.SelectRow(0).Border(DOUBLE);
 
-	return vbox({text("=== Top IP addresses ===") | bold,
-
-				 table.Render()}) |
-		   flex;
+	return vbox({text("=== Top IP addresses ===") 
+		| bold, table.Render()}) | flex;
 }
 
-static ftxui::Element renderBandwidth(const StatsSnapshot &data)
+ftxui::Element View::renderBandwidth(const StatsSnapshot &data)
 {
     GraphFunction fn = [data](int width, int height) {
 		std::vector<int> output(width, 0);
 
-		if (data.bandwidth_history.size() < 2) {
+		if (data.bandwidthHistory.size() < 2) {
 			return output;
 		}
 
-		const size_t n = data.bandwidth_history.size();
+		const size_t n = data.bandwidthHistory.size();
 		const size_t start = n > 50 ? n - 50 : 0;
 
 		double max_bw = 1.0;
 		for (size_t i = start; i < n; ++i) {
-			max_bw = std::max(max_bw, data.bandwidth_history[i].bytes_per_sec);
+			max_bw = std::max(max_bw, data.bandwidthHistory[i].bytesPerSecond);
 		}
 
 		for (int x = 0; x < width; ++x) {
@@ -140,8 +139,8 @@ static ftxui::Element renderBandwidth(const StatsSnapshot &data)
 			const size_t i1 = std::min(i0 + 1, n - 1);
 
 			const double frac = idx_f - static_cast<double>(i0);
-			const double bw = data.bandwidth_history[i0].bytes_per_sec * (1.0 - frac) +
-							  data.bandwidth_history[i1].bytes_per_sec * frac;
+			const double bw = data.bandwidthHistory[i0].bytesPerSecond * (1.0 - frac) +
+							  data.bandwidthHistory[i1].bytesPerSecond * frac;
 
 			const double v = bw / max_bw;
 			output[x] = static_cast<int>(v * static_cast<double>(height - 1));
@@ -150,38 +149,36 @@ static ftxui::Element renderBandwidth(const StatsSnapshot &data)
 		return output;
 	};
 	return vbox({
-		text(std::format(" Bandwidth: {:.2f} KB / max: {:.2f} KB", data.bandwidth, data.max_bandwidth)) | bold,
+		text(std::format(" Bandwidth: {:.2f} KB / max: {:.2f} KB", data.bandwidth, data.maxBandwidth)) | bold,
 		graph(fn) | size(HEIGHT, EQUAL, 20) | size(WIDTH, EQUAL, 60) | border | color(Color::Green),
 	});
 }
 
-static ftxui::Element renderPackets(const StatsSnapshot &data)
+ftxui::Element View::renderPackets(const StatsSnapshot &data)
 {
-    Table table(data.packets_rows);
+    Table table(data.packetRows);
 	table.SelectAll().Border(LIGHT);
 
 	table.SelectRow(0).Decorate(bold);
 	table.SelectRow(0).SeparatorVertical(LIGHT);
 	table.SelectRow(0).Decorate(bold);
 	table.SelectRow(0).Border(DOUBLE);
-	return vbox({text("=== Packets ===") | bold,
-
-				 table.Render() | flex}) |
-		   flex;
+	return vbox({text("=== Packets ===") 
+		| bold, table.Render() | flex}) | flex;
 }
 
 
-static ftxui::Element renderFooter(bool captureFinished, std::chrono::seconds timer)
+ftxui::Element View::renderFooter(bool captureFinished, std::chrono::seconds timer)
 {
-    return Element({capture_finished
+    return Element({captureFinished
 						? text("Capture finished (" + std::format("{}", timer) + "). Press 'q' or Esc to exit.") |
 							  bold | color(Color::Yellow) | center
 						: text("time: " + std::format("{}", timer) + ". Press 'q' or Esc to exit.") | center |
 							  size(HEIGHT, EQUAL, 1)});
 }
 
-static ftxui::Element View::renderPairs(const StatsSnapshot &data) {
-	Table table(data.pairs_rows);
+ftxui::Element View::renderPairs(const StatsSnapshot &data) {
+	Table table(data.pairRows);
 	table.SelectAll().Border(LIGHT);
 
 	table.SelectRow(0).Decorate(bold);

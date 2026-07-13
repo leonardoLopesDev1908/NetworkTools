@@ -4,7 +4,7 @@
 using namespace ftxui;
 
 ftxui::Element View::render(const StatsSnapshot &data, const std::string &interface, 
-        const std::string &filter, bool captureFinished, std::chrono::seconds timer)
+	const std::string &filter, bool captureFinished, std::chrono::seconds timer)
 {
     auto header = renderHeader(data, interface, filter);
 

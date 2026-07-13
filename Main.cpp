@@ -7,6 +7,10 @@ namespace po = boost::program_options;
 
 int main(int argc, char** argv)
 {
+    auto initResult = platformInit();
+    if (!initResult)
+        return 0;
+
     ProxyApp proxy;
     AnalyzerApp trafficAnalyzer;
 
@@ -56,8 +60,23 @@ int main(int argc, char** argv)
     }
     else
     {
-        trafficAnalyzer.start();
+        std::string intf{};
+        
+        if (vm.count("interfaces"))
+            intf = vm["interfaces"].as<std::string>();
+        
+        int limitPackets{};
+        if (vm.count("count"))
+            limitPackets = vm["count"].as<int>();
+
+        std::vector<std::string> filters{};
+        if (vm.count("filters"))
+            filters = vm["filters"].as <std::vector<std::string>>();
+
+        trafficAnalyzer.start(intf, limitPackets, filters);
     }
+
+    platformCleanup();
 
 	return 0;
 }

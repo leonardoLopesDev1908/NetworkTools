@@ -10,11 +10,11 @@
 class View
 {
 public:
-    ftxui::Element render(const StatsSnapshot &data, const std::string &interface, const std::string &filter,
-						  bool capture_finished, std::chrono::seconds timer);
+    ftxui::Element render(const StatsSnapshot &data, const std::string &intf, const std::string &filter, 
+		bool captureFinished, std::chrono::seconds timer);
 
 private:
-	static ftxui::Element renderHeader(const StatsSnapshot &data, const std::string &interface,
+	static ftxui::Element renderHeader(const StatsSnapshot &data, const std::string &intf,
 										const std::string &filter);
 	static ftxui::Element renderStats(const StatsSnapshot &data);
 

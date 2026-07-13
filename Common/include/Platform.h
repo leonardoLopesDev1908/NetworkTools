@@ -4,12 +4,10 @@
 #include <expected>
 #include <iostream>
 
-
-#define NOMINMAX
+#include <pcap/pcap.h>
 
 #ifdef _WIN32
 // NOLINTBEGIN(llvm-include-order)
-#include <pcap.h>
 #include <WinSock2.h>
 #include <Windows.h>
 #include <ws2tcpip.h>
@@ -148,7 +146,6 @@ inline bool isSocketError(SocketType s) { return s == SOCKET_ERROR; }
 #include <netinet/ip6.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/tcp.h>
-#include <pcap/pcap.h>
 #include <netinet/udp.h>
 #include <sys/socket.h>
 #include <unistd.h>

@@ -4,7 +4,6 @@
 #include "IP.h"
 #include "Packet.h"
 #include "Platform.h"
-#include "Pcap.h"
 #include "Stats.h"
 
 #include <atomic>
@@ -26,13 +25,12 @@ class Capture
     std::unique_ptr<pcap_t, decltype(&pcap_close)> handle {nullptr, &pcap_close};
     
     struct bpf_program fp{};
-    bpf_u_int32 netmask;
+    bpf_u_int32 netmask{};
 
     uint16_t offset = 0;
     std::function<uint16_t(const uint8_t*)> getEtherType;
 
     std::string filterExp;
-
     std::atomic<bool> running{false};
     std::thread thread;
     Stats* stats = nullptr;

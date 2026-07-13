@@ -38,7 +38,6 @@ public:
 
 class IPv4 : public IP
 {
-private:
 	const ip* ipHdr = nullptr;
 	uint8_t ipHdrLen = 0;
 	uint16_t srcPort = 0;
@@ -62,7 +61,6 @@ public:
 
 class IPv6 : public IP
 {
-private:
     const ip6_hdr *ipHdr = nullptr;
 	int ipHdrLen = 40;
     int ipExtLen = 0;

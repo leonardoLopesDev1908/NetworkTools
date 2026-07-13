@@ -1,6 +1,7 @@
 #include "Capture.h"
 #include "Packet.h"
 
+#include <fstream>
 
 Capture::~Capture(){ stop(); }
 
@@ -39,6 +40,8 @@ void Capture::callback(uint8_t* user, const struct pcap_pkthdr* pkthdr, const ui
 void Capture::treatPacket(const struct pcap_pkthdr* pkthdr, const uint8_t* packet)
 {
     uint16_t etherType = getEtherType(packet);
+    std::ofstream file("output.txt");
+    file << "packet received\n";
 
     if (etherType == ETHERTYPE_IP)
     {
@@ -62,6 +65,7 @@ void Capture::treatPacket(const struct pcap_pkthdr* pkthdr, const uint8_t* packe
         stats->push(pkt);
         stats->addPacket(pkt);
     }
+
 }
 
 void Capture::dataLink(int type)

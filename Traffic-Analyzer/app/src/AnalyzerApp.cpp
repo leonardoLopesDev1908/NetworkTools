@@ -47,7 +47,7 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
                 screen.Exit();
                 return true;
             }
-            return true;
+            return false;
         });
 
 	std::thread appThread = std::thread([&]
@@ -56,7 +56,6 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
 
             while (capture.isRunning() || tuiRunning)
             {
-
                 auto frameStart = std::chrono::steady_clock::now();
 
                 if (!tuiRunning)

@@ -113,12 +113,12 @@ void Capture::dataLink(int type)
 
 void Capture::start() 
 {
-    printf("Capture started\n");
     handle.reset(pcap_open_live(device.c_str(), BUFSIZ, 1, 1000, errBuf));
     
     if (handle == nullptr)
     {
-        throw std::runtime_error("Error: " + device + " failed: " + errBuf);
+        printf("Error: %s failed: %s\n", device.c_str(), errBuf);
+        return;
     }
 
     dataLink(pcap_datalink(handle.get()));
@@ -143,7 +143,6 @@ void Capture::start()
 
 void Capture::config(const std::string& device, int limit, Stats* stats, const std::string& filterExp)
 {
-    printf("%s\n", device);
     this->device = device;
     this->stats = stats;
     this->filterExp = filterExp;

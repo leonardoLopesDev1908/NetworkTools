@@ -1,4 +1,5 @@
 #include "AnalyzerApp.h"
+#include "Initialization.h"
 #include "Platform.h"
 #include "ProxyApp.h"
 #include <boost/program_options.hpp>
@@ -8,10 +9,9 @@ namespace po = boost::program_options;
 
 int main(int argc, char** argv)
 {
-    platformInit();
-
-    ProxyApp proxy;
-    AnalyzerApp trafficAnalyzer;
+    auto init = platformInit();
+    if (!init)
+        return 0;
 
     po::variables_map vm;
     po::options_description desc("Options");
@@ -41,7 +41,7 @@ int main(int argc, char** argv)
     po::notify(vm);
     
     std::string tool;
-
+    
     if (vm.count("help"))
     {
         std::cout << desc << std::endl;
@@ -55,6 +55,7 @@ int main(int argc, char** argv)
 
     if (tool == "proxy")
     {
+        ProxyApp proxy;
 	    proxy.start();
     }
     else
@@ -72,6 +73,7 @@ int main(int argc, char** argv)
         if (vm.count("filters"))
             filters = vm["filters"].as <std::vector<std::string>>();
 
+        AnalyzerApp trafficAnalyzer;
         trafficAnalyzer.start(intf, limitPackets, filters);
     }
 

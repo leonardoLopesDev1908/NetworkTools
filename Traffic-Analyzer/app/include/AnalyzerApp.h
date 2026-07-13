@@ -1,8 +1,6 @@
 #ifndef ANALYZER_APP_H
 #define ANALYZER_APP_H
 
-#include "Platform.h"
-
 #include "Capture.h"
 #include "Stats.h"
 #include "View.h"

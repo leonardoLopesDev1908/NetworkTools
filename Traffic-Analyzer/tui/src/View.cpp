@@ -1,5 +1,5 @@
 #include "View.h"
-#include "ftxui/dom/table.hpp"
+#include <ftxui/dom/table.hpp>
 
 using namespace ftxui;
 

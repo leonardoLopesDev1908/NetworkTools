@@ -1,15 +1,16 @@
-
-#if 0
-
-ifndef INITIALIZATION_H
+#ifndef INITIALIZATION_H
 #define INITIALIZATION_H
 
+#include <iostream>
 #include <expected>
 
 #ifdef _WIN32
+// NOLINTBEGIN(llvm-include-order)
 #include <WinSock2.h>
 #include <Windows.h>
 #include <ws2tcpip.h>
+// NOLINTEND(llvm-include-order)
+
 
 inline std::expected<void, std::string> platformInit()
 {

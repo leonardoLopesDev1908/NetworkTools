@@ -135,11 +135,11 @@ void Stats::updatePackets()
         {"IP Version", "Transport protocol", "Source", "Destination", "App protocol"}
     );
 
-    for (int i = 0; i < 50; i++)
+    for (auto& p : packets)
     {
         snapshot.packetRows.push_back({
-            std::to_string(packets[i].ipVersion), transportToStr(packets[i].transProtocol), 
-            packets[i].source,packets[i].destiny, appToStr(packets[i].appProtocol)
+            std::to_string(p.ipVersion), transportToStr(p.transProtocol), 
+            p.source,p.destiny, appToStr(p.appProtocol)
         });
     }
 }

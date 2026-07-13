@@ -15,7 +15,7 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
             filterExp += s + " ";
         }
 	}
-
+    
 	capture.config(intf, limitPackets, &stats, filterExp);
 
     std::atomic<bool> captureFinished = false;
@@ -52,10 +52,12 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
 
 	std::thread appThread = std::thread([&]
         {
+            const std::chrono::milliseconds frameDuration(33);
+
             while (capture.isRunning() || tuiRunning)
             {
-                auto now = std::chrono::steady_clock::now();
-                timer.store(std::chrono::duration_cast<std::chrono::seconds>(now - begin));
+
+                auto frameStart = std::chrono::steady_clock::now();
 
                 if (!tuiRunning)
                     captureFinished = true;
@@ -74,9 +76,16 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
                     std::scoped_lock<std::mutex> lck(mtx);
                     currentFrame = newFrame;
                 }
+                
                 if (tuiRunning)
                 {
                     screen.PostEvent(ftxui::Event::Custom);
+                }
+
+                auto frameTime = std::chrono::steady_clock::now() - frameStart;
+                if(frameTime < frameDuration)
+                {
+                    std::this_thread::sleep_for(frameDuration - frameTime);
                 }
             }
         });

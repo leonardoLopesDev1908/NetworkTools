@@ -2,14 +2,13 @@
 #include "Platform.h"
 #include "ProxyApp.h"
 #include <boost/program_options.hpp>
+#include <expected>
 
 namespace po = boost::program_options;
 
 int main(int argc, char** argv)
 {
-    auto initResult = platformInit();
-    if (!initResult)
-        return 0;
+    platformInit();
 
     ProxyApp proxy;
     AnalyzerApp trafficAnalyzer;
@@ -62,8 +61,8 @@ int main(int argc, char** argv)
     {
         std::string intf{};
         
-        if (vm.count("interfaces"))
-            intf = vm["interfaces"].as<std::string>();
+        if (vm.count("interface"))
+            intf = vm["interface"].as<std::string>();
         
         int limitPackets{};
         if (vm.count("count"))

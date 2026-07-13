@@ -113,6 +113,7 @@ void Capture::dataLink(int type)
 
 void Capture::start() 
 {
+    printf("Capture started\n");
     handle.reset(pcap_open_live(device.c_str(), BUFSIZ, 1, 1000, errBuf));
     
     if (handle == nullptr)
@@ -131,18 +132,18 @@ void Capture::start()
             printf("Error: pcap_setfilter() %s", pcap_geterr(handle.get()));
     }
 
-    thread = std::thread([&]()
+    thread = std::thread([&](){
+        if (pcap_loop(handle.get(), packetsLimit, callback, reinterpret_cast<uint8_t*>(this)))
         {
-            if (pcap_loop(handle.get(), packetsLimit, callback, (uint8_t*)nullptr))
-            {
-                printf("Error: pcap_loop() faile\n");
-                exit(1);
-            }
-        });
+            printf("Error: pcap_loop() faile\n");
+            exit(1);
+        }
+    });
 }
 
 void Capture::config(const std::string& device, int limit, Stats* stats, const std::string& filterExp)
 {
+    printf("%s\n", device);
     this->device = device;
     this->stats = stats;
     this->filterExp = filterExp;

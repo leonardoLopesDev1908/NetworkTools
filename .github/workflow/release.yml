@@ -1,0 +1,81 @@
+﻿name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions: 
+    contents: write    
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest  
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive   # se tiver submodules (FTXUI via FetchContent não precisa)
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            libboost-program-options-dev \
+            libpcap-dev \
+            cmake \
+            ninja-build \
+            g++
+
+      - name: Configure
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Rename binary
+        run: mv build/NetworkTools build/NetworkTools-linux-x86_64
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/NetworkTools-linux-x86_64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: 'a42af01b72c28a8e1d7b48107b33e4f286a55ef6'
+
+      - name: Install dependencies
+        run: vcpkg install boost-program-options libpcap
+
+      - name: Configure
+        run: |
+          cmake -B build -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Rename binary
+        run: mv build/NetworkTools.exe build/NetworkTools-windows-x86_64.exe
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/NetworkTools-windows-x86_64.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

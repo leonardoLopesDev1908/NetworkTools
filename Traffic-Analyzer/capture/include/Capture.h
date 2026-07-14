@@ -3,7 +3,7 @@
 
 #include "IP.h"
 #include "Packet.h"
-#include "Platform.h"
+#include "Pcap.h"
 #include "Stats.h"
 
 #include <atomic>
@@ -29,6 +29,7 @@ class Capture
 
     uint16_t offset = 0;
     std::function<uint16_t(const uint8_t*)> getEtherType;
+    pcap_if_t* interfaces = nullptr;
 
     std::string filterExp;
     std::atomic<bool> running{false};
@@ -44,6 +45,7 @@ public:
     
     ~Capture();
 
+    void initialize();
     void start();
     void config(const std::string& device, int limit, Stats* stats,
                          const std::string& filterExp);

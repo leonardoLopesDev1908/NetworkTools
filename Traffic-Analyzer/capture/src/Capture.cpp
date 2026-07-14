@@ -1,5 +1,4 @@
 #include "Capture.h"
-#include "Packet.h"
 
 #include <fstream>
 
@@ -40,7 +39,7 @@ void Capture::callback(uint8_t* user, const struct pcap_pkthdr* pkthdr, const ui
 void Capture::treatPacket(const struct pcap_pkthdr* pkthdr, const uint8_t* packet)
 {
     uint16_t etherType = getEtherType(packet);
-    
+
     if (etherType == ETHERTYPE_IP)
     {
         IPv4 ip(packet + offset);
@@ -109,6 +108,14 @@ void Capture::dataLink(int type)
         break;
     default:
         throw std::runtime_error("Data link not supported");
+    }
+}
+
+void Capture::initialize()
+{
+    if (pcap_findalldevs(&interfaces, errBuf) == -1)
+    {
+        throw std::runtime_error("Error: pcap_findalldevs has been failed");
     }
 }
 

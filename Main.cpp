@@ -1,6 +1,5 @@
 #include "AnalyzerApp.h"
 #include "Initialization.h"
-#include "Platform.h"
 #include "ProxyApp.h"
 #include <boost/program_options.hpp>
 #include <expected>

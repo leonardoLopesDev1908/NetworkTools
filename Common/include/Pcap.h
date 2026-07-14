@@ -1,11 +1,6 @@
-#if 0
-ifndef PCAP_H
+#ifndef PCAP_H
 #define PCAP_H
 
-#ifdef _WIN32
-#include <pcap.h>
-#else
 #include <pcap/pcap.h> 
-#endif
 
 #endif

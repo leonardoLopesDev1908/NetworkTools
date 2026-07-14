@@ -1,5 +1,4 @@
 #include "IP.h"
-#include "Platform.h" 
 
 #include <array>
 #include <cstdio>

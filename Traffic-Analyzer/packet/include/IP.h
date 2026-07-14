@@ -2,7 +2,7 @@
 #define IP_H
 
 #include "Packet.h"
-#include "Platform.h"
+#include "Protocols.h"
 
 #include <string>
 

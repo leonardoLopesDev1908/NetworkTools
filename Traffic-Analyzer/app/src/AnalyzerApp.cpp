@@ -68,17 +68,17 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
                 stats.updatePairs();
                 stats.updateTransportStats();
 
-                ftxui::Element newFrame = view.render(stats.getSnaphot(), intf, filterExp, 
-                                            captureFinished, timer.load());
+                /*ftxui::Element newFrame = view.render(stats.getSnaphot(), intf, filterExp, 
+                                           captureFinished, timer.load());
 
                 {
                     std::scoped_lock<std::mutex> lck(mtx);
                     currentFrame = newFrame;
-                }
+                }*/
                 
                 if (tuiRunning)
                 {
-                    screen.PostEvent(ftxui::Event::Custom);
+                    //screen.PostEvent(ftxui::Event::Custom);
                 }
 
                 auto frameTime = std::chrono::steady_clock::now() - frameStart;
@@ -89,7 +89,7 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
             }
         });
 
-    screen.Loop(component);
+    //screen.Loop(component);
 
     captureFinished = false;
 

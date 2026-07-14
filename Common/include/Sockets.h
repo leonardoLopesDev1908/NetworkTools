@@ -1,5 +1,4 @@
-#if 0
-ifndef SOCKETS_H
+#ifndef SOCKETS_H
 #define SOCKETS_H
 
 #include "Initialization.h"

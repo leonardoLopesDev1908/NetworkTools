@@ -48,7 +48,7 @@ struct Packet
     Packet(IPVersion ip, TransportProtocol transP, const std::string& src, const std::string& dst,
            int16_t src_port, uint16_t dst_port, uint32_t total_len, uint16_t payload,
            const uint8_t* payload_ptr)
-        : ipVersion(ip), transProtocol(transP), source(std::move(src)), destiny(std::move(dst)),
+        : ipVersion(ip), transProtocol(transP), source(src), destiny(dst),
           srcPort(src_port), dstPort(dst_port), totalLen(total_len), payloadLen(payload),
           payloadPtr(payload_ptr)
     {

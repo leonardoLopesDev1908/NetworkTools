@@ -7,15 +7,15 @@
 #include <stdlib.h>
 #include <string>
 
-Message HttpParser::parse(std::string& raw, Direction direction)
+Message HttpParser::parse(std::string& raw, Type type)
 {
 
     Message msg{};
-    msg.direction = direction;
+    msg.type = type;
 
     std::string firstLine = getFirstLine(raw);
 
-    if (direction == Direction::Outbound)
+    if (type == Type::Outbound)
     {
         StatusLine sl;
         std::istringstream iss(firstLine);

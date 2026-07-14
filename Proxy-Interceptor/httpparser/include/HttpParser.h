@@ -23,7 +23,7 @@
 class HttpParser
 {
   public:
-    Message parse(std::string& raw, Direction direction);
+    Message parse(std::string& raw, Type type);
 
   private:
     std::string getFirstLine(std::string& raw);

@@ -1,5 +1,4 @@
 #include "IP.h"
-#include "Platform.h" 
 
 #include <array>
 #include <cstdio>
@@ -41,7 +40,7 @@ IPv4::IPv4(const uint8_t* data)
             IPv4::handleIcmp();
             break;
         case IPPROTO_ICMPV6:
-            IPv4::handleIcmp6;
+            IPv4::handleIcmp6();
             break;
         case IPPROTO_IGMP:
             IPv4::handleIgmp();
@@ -54,6 +53,7 @@ IPv4::IPv4(const uint8_t* data)
 
 uint16_t IPv4::getSourcePort() { return srcPort; }
 uint16_t IPv4::getDestinyPort() { return destPort; }
+uint8_t IPv4::getHeaderLen() const { return ipHdrLen; }
 
 void IPv4::handleTcp() 
 {  

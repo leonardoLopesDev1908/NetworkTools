@@ -28,7 +28,7 @@ void Capture::stop()
 void Capture::callback(uint8_t* user, const struct pcap_pkthdr* pkthdr, const uint8_t* packetd_ptr)
 {
     auto* self= reinterpret_cast<Capture*>(user);
-
+    
     if (!self->isRunning())
     {
         return;
@@ -40,9 +40,7 @@ void Capture::callback(uint8_t* user, const struct pcap_pkthdr* pkthdr, const ui
 void Capture::treatPacket(const struct pcap_pkthdr* pkthdr, const uint8_t* packet)
 {
     uint16_t etherType = getEtherType(packet);
-    std::ofstream file("output.txt");
-    file << "packet received\n";
-
+    
     if (etherType == ETHERTYPE_IP)
     {
         IPv4 ip(packet + offset);
@@ -50,7 +48,7 @@ void Capture::treatPacket(const struct pcap_pkthdr* pkthdr, const uint8_t* packe
         Packet pkt(v4, ip.getProtocol(), ip.getSource(), ip.getDestiny(), 
             ip.getSourcePort(), ip.getDestinyPort(), pkthdr->len, 
             ip.getPayloadLen(), ip.getPayloadPtr());
-
+        
         stats->push(pkt);
         stats->addPacket(pkt);
     }
@@ -65,7 +63,6 @@ void Capture::treatPacket(const struct pcap_pkthdr* pkthdr, const uint8_t* packe
         stats->push(pkt);
         stats->addPacket(pkt);
     }
-
 }
 
 void Capture::dataLink(int type)
@@ -117,15 +114,19 @@ void Capture::dataLink(int type)
 
 void Capture::start() 
 {
-    handle.reset(pcap_open_live(device.c_str(), BUFSIZ, 1, 1000, errBuf));
+    printf("Capture started\n");
+
+    handle.reset(pcap_open_live(device.c_str(), BUFSIZ, 1, 100, errBuf));
     
     if (handle == nullptr)
     {
         printf("Error: %s failed: %s\n", device.c_str(), errBuf);
         return;
     }
-
+        
     dataLink(pcap_datalink(handle.get()));
+        
+    running = true;
 
     if (!filterExp.empty())
     {

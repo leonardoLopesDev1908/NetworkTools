@@ -49,7 +49,7 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
             }
             return false;
         });
-
+        
 	std::thread appThread = std::thread([&]
         {
             const std::chrono::milliseconds frameDuration(33);

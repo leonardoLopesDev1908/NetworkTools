@@ -68,6 +68,9 @@ void Stats::addPacket(const Packet& packet)
 
 	pairs[{packet.source, packet.destiny}].bytes += packet.totalLen;
 	pairs[{packet.source, packet.destiny}].packets++;
+
+    printf("Packet added\n");
+    printf("Total packets: %d\n", snapshot.totalPackets);
 }
 
 void Stats::updateAppStats() 

@@ -9,9 +9,7 @@ namespace po = boost::program_options;
 
 int main(int argc, char** argv)
 {
-    auto init = platformInit();
-    if (!init)
-        return 0;
+    platformInit();
 
     po::variables_map vm;
     po::options_description desc("Options");

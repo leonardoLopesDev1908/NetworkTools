@@ -24,6 +24,8 @@ public:
     ftxui::Element messages_menu_page();
     ftxui::Element options_page();
 
+    void printHelp();
+
 private:
     ftxui::Element edit_messages_menu();
     ftxui::Element show_messages_menu(std::deque<Message> messages);

@@ -2,7 +2,7 @@
 #define IP_H
 
 #include "Packet.h"
-#include "Platform.h"
+#include "Protocols.h"
 
 #include <string>
 
@@ -38,7 +38,6 @@ public:
 
 class IPv4 : public IP
 {
-private:
 	const ip* ipHdr = nullptr;
 	uint8_t ipHdrLen = 0;
 	uint16_t srcPort = 0;
@@ -54,6 +53,7 @@ protected:
 public:
 	uint16_t getSourcePort() override;
 	uint16_t getDestinyPort() override;
+    uint8_t getHeaderLen() const;
 
 	explicit IPv4(const uint8_t *data);
 
@@ -61,14 +61,6 @@ public:
 
 class IPv6 : public IP
 {
-protected:
-	void handleTcp() override;
-	void handleUdp() override;
-	void handleIcmp() override;
-	void handleIcmp6() override;
-	void handleIgmp() override;
-
-private:
     const ip6_hdr *ipHdr = nullptr;
 	int ipHdrLen = 40;
     int ipExtLen = 0;
@@ -81,6 +73,13 @@ private:
 
 	const uint8_t *packetPtr = nullptr;
     const uint8_t* packetEnd = nullptr;
+
+protected:
+	void handleTcp() override;
+	void handleUdp() override;
+	void handleIcmp() override;
+	void handleIcmp6() override;
+	void handleIgmp() override;
 
 public:
 	uint16_t getSourcePort() override;

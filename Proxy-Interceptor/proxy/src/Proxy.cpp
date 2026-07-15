@@ -13,12 +13,6 @@ Proxy::~Proxy() { stop(); }
 std::expected<void, std::string> Proxy::create()
 {
 
-#ifdef _WIN32
-    auto initResult = platformInit();
-    if (!initResult)
-        return initResult;
-#endif
-
     struct addrinfo* result = nullptr;
     struct addrinfo hints;
 
@@ -121,7 +115,6 @@ void Proxy::stop()
     }
 
     m_conns.stop();
-    platformCleanup();
 }
 
 Queue<Message>& Proxy::getQueue() { return m_messages; }

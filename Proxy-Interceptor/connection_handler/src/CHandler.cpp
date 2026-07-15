@@ -68,7 +68,7 @@ std::expected<void, std::string> CHandler::read()
 
     std::string firstLine = m_requestBuf.substr(0, m_requestBuf.find("\r\n"));
 
-    Message msg = m_parser.parse(m_requestBuf, Direction::Inbound);
+    Message msg = m_parser.parse(m_requestBuf, Type::Inbound);
 
     std::string destiny = msg.headers["Host"];
     std::string host = destiny;
@@ -193,7 +193,7 @@ void CHandler::forwardOutbound(bool closeClientSocket)
         return;
     }
 
-    Message msg = m_parser.parse(m_responseBuf, Direction::Outbound);
+    Message msg = m_parser.parse(m_responseBuf, Type::Outbound);
 
     if (msg.headers["Connection"] == "close")
         closeSocket(m_forwardSocket);

@@ -78,7 +78,7 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
                 
                 if (tuiRunning)
                 {
-                    screen.PostEvent(ftxui::Event::Custom);
+                   screen.PostEvent(ftxui::Event::Custom);
                 }
 
                 auto frameTime = std::chrono::steady_clock::now() - frameStart;

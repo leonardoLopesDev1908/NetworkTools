@@ -1,5 +1,6 @@
 #include "Capture.h"
 
+#include <print>
 #include <fstream>
 
 Capture::~Capture(){ stop(); }
@@ -127,15 +128,16 @@ void Capture::start()
     int i = 1;
     for (devicePtr = interfaces; devicePtr != nullptr; devicePtr = devicePtr->next)
     {
-        printf("%d: %s\n", i++, devicePtr->name);
+        std::print("%d: %s\n", i++, devicePtr->name);
+        std::print("%s\n\n", devicePtr->description);
     }
 
     if (i == 0)
         throw std::runtime_error("No interface was found");
 
     int input{};
-    printf("Number of the chosen interface: ");
-    scanf("%d", &input);
+    std::print("Number of the chosen interface: ");
+    std::cin >> input;
     
     if (input > i || input < 1)
     {
@@ -146,6 +148,7 @@ void Capture::start()
     for (devicePtr = interfaces, i = 0; i < input - 1; i++, devicePtr = devicePtr->next)
         ;
 
+    device = devicePtr->name;
     handle.reset(pcap_open_live(devicePtr->name, BUFSIZ, 1, 100, errBuf));
 
 #else
@@ -154,7 +157,7 @@ void Capture::start()
 
     if (handle == nullptr)
     {
-        printf("Error: %s failed: %s\n", device.c_str(), errBuf);
+        std::print("Error: %s failed: %s\n", device.c_str(), errBuf);
         return;
     }
         
@@ -165,16 +168,16 @@ void Capture::start()
     if (!filterExp.empty())
     {
         if (pcap_compile(handle.get(), &fp, filterExp.c_str(), 0, netmask) == PCAP_ERROR)
-            printf("Error: pcap_compile\n");
+            std::print("Error: pcap_compile\n");
 
         if (pcap_setfilter(handle.get() , &fp) == 0)
-            printf("Error: pcap_setfilter() %s", pcap_geterr(handle.get()));
+            std::print("Error: pcap_setfilter() %s", pcap_geterr(handle.get()));
     }
 
     thread = std::thread([&](){
         if (pcap_loop(handle.get(), packetsLimit, callback, reinterpret_cast<uint8_t*>(this)))
         {
-            printf("Error: pcap_loop() faile\n");
+            std::print("Error: pcap_loop() faile\n");
             exit(1);
         }
     });

@@ -30,6 +30,7 @@ class Capture
     uint16_t offset = 0;
     std::function<uint16_t(const uint8_t*)> getEtherType;
     pcap_if_t* interfaces = nullptr;
+    pcap_if_t* devicePtr = nullptr;
 
     std::string filterExp;
     std::atomic<bool> running{false};

@@ -1,5 +1,6 @@
 #include "Capture.h"
 
+#include <print>
 #include <fstream>
 
 Capture::~Capture(){ stop(); }
@@ -121,13 +122,42 @@ void Capture::initialize()
 
 void Capture::start() 
 {
-    printf("Capture started\n");
+    //This is the way of chosing an interface in windows platforms
+    //as windows network interfaces have not the same naming conventions as linux
+#ifdef _WIN32
+    int i = 1;
+    for (devicePtr = interfaces; devicePtr != nullptr; devicePtr = devicePtr->next)
+    {
+        std::print("%d: %s\n", i++, devicePtr->name);
+        std::print("%s\n\n", devicePtr->description);
+    }
 
-    handle.reset(pcap_open_live(device.c_str(), BUFSIZ, 1, 100, errBuf));
+    if (i == 0)
+        throw std::runtime_error("No interface was found");
+
+    int input{};
+    std::print("Number of the chosen interface: ");
+    std::cin >> input;
     
+    if (input > i || input < 1)
+    {
+        pcap_freealldevs(interfaces);
+        throw std::runtime_error("Invalid option");
+    }
+
+    for (devicePtr = interfaces, i = 0; i < input - 1; i++, devicePtr = devicePtr->next)
+        ;
+
+    device = devicePtr->name;
+    handle.reset(pcap_open_live(devicePtr->name, BUFSIZ, 1, 100, errBuf));
+
+#else
+    handle.reset(pcap_open_live(device.c_str(), BUFSIZ, 1, 100, errBuf));
+#endif
+
     if (handle == nullptr)
     {
-        printf("Error: %s failed: %s\n", device.c_str(), errBuf);
+        std::print("Error: %s failed: %s\n", device.c_str(), errBuf);
         return;
     }
         
@@ -138,16 +168,16 @@ void Capture::start()
     if (!filterExp.empty())
     {
         if (pcap_compile(handle.get(), &fp, filterExp.c_str(), 0, netmask) == PCAP_ERROR)
-            printf("Error: pcap_compile\n");
+            std::print("Error: pcap_compile\n");
 
         if (pcap_setfilter(handle.get() , &fp) == 0)
-            printf("Error: pcap_setfilter() %s", pcap_geterr(handle.get()));
+            std::print("Error: pcap_setfilter() %s", pcap_geterr(handle.get()));
     }
 
     thread = std::thread([&](){
         if (pcap_loop(handle.get(), packetsLimit, callback, reinterpret_cast<uint8_t*>(this)))
         {
-            printf("Error: pcap_loop() faile\n");
+            std::print("Error: pcap_loop() faile\n");
             exit(1);
         }
     });

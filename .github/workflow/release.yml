@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive   # se tiver submodules (FTXUI via FetchContent não precisa)
+          submodules: recursive  
 
       - name: Install dependencies
         run: |

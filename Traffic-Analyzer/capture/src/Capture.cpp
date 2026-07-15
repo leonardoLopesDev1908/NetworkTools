@@ -121,10 +121,37 @@ void Capture::initialize()
 
 void Capture::start() 
 {
-    printf("Capture started\n");
+    //This is the way of chosing an interface in windows platforms
+    //as windows network interfaces have not the same naming conventions as linux
+#ifdef _WIN32
+    int i = 1;
+    for (devicePtr = interfaces; devicePtr != nullptr; devicePtr = devicePtr->next)
+    {
+        printf("%d: %s\n", i++, devicePtr->name);
+    }
 
-    handle.reset(pcap_open_live(device.c_str(), BUFSIZ, 1, 100, errBuf));
+    if (i == 0)
+        throw std::runtime_error("No interface was found");
+
+    int input{};
+    printf("Number of the chosen interface: ");
+    scanf("%d", &input);
     
+    if (input > i || input < 1)
+    {
+        pcap_freealldevs(interfaces);
+        throw std::runtime_error("Invalid option");
+    }
+
+    for (devicePtr = interfaces, i = 0; i < input - 1; i++, devicePtr = devicePtr->next)
+        ;
+
+    handle.reset(pcap_open_live(devicePtr->name, BUFSIZ, 1, 100, errBuf));
+
+#else
+    handle.reset(pcap_open_live(device.c_str(), BUFSIZ, 1, 100, errBuf));
+#endif
+
     if (handle == nullptr)
     {
         printf("Error: %s failed: %s\n", device.c_str(), errBuf);

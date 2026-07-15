@@ -18,7 +18,7 @@ int main(int argc, char** argv)
             "Tool mode to execute: 'proxy' or 'analyzer' ")
 
         ("interfaces, interfaces", "Display all possible interfaces")
-        ("interface,i", po::value<std::string>()->default_value("wlan0"))
+        ("interface,i", po::value<std::string>()->default_value("any"))
 
         ("count,c", po::value<int>()->default_value(0),
             "Number of packets to capture (0 = unlimited)")

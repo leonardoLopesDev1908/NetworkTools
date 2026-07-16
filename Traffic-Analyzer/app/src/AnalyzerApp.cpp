@@ -2,8 +2,6 @@
 #include <ftxui/screen/screen.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 
-#include <fstream>
-
 using namespace ftxui;
 
 void AnalyzerApp::start(const std::string& intf, int limitPackets, 
@@ -97,41 +95,13 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
 
     if(!output.empty())
     {
-        if(output == "csv") exportCsv();
+        if(output == "csv") stats.exportCsv();
         //else if(output == "json") exportJson();
         //
     }
 
     if (appThread.joinable())
         appThread.join();
-}
-
-void AnalyzerApp::exportCsv()
-{
-    std::ofstream csvFile("capture_output.csv");
-        
-    csvFile << "Name,Packet,Bytes\n";
-    
-    auto snapshot = stats.getSnapshot();
-
-    csvFile << "Total,"
-            << snapshot.totalPackets << ","
-            << snapshot.totalBytes << "\n";
-
-    for(auto& [t, s] : snapshot.transportMap)
-        csvFile << t << "," 
-                << s.packets << ","
-                << s.bytes << "\n";
-
-    for(auto& [app, s] : snapshot.applicationMap)
-        csvFile << app << ","
-                << s.packets << ","
-                << s.bytes << "\n";
-        
-    for(auto& [ip, s] : snapshot.ipMap)
-        csvFile << ip << ","
-                << s.packetsSent << ","
-                << s.bytesSent << "\n";
 }
 
 void AnalyzerApp::printHelp()

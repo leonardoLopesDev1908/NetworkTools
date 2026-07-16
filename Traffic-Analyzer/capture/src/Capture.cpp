@@ -128,8 +128,8 @@ void Capture::start()
     int i = 1;
     for (devicePtr = interfaces; devicePtr != nullptr; devicePtr = devicePtr->next)
     {
-        std::print("%d: %s\n", i++, devicePtr->name);
-        std::print("%s\n\n", devicePtr->description);
+        std::printf("%d: %s\n", i++, devicePtr->name);
+        std::printf("%s\n\n", devicePtr->description);
     }
 
     if (i == 0)

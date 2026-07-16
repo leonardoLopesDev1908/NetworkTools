@@ -13,16 +13,13 @@ class AnalyzerApp
 	Capture capture;
 	Stats stats;
     View view;
-    std::string& output;
+    std::string output;
 
 public:
 
 	void start(const std::string& intf, int limitPackets, 
 			std::vector<std::string>& filters, const std::string& output);
 	void printHelp();
-        
-private:
-    void exportCsv();
 };
 
 

@@ -92,7 +92,8 @@ public:
     void updatePackets();
     void updatePairs();
     void updateTransportStats();
-};
 
+    void exportCsv();
+};
 
 #endif

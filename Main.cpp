@@ -4,6 +4,7 @@
 
 #include <boost/program_options.hpp>
 #include <expected>
+#include <print>
 
 namespace po = boost::program_options;
 
@@ -73,6 +74,15 @@ int main(int argc, char** argv)
         if (vm.count("filters"))
             filters = vm["filters"].as <std::vector<std::string>>();
 
+        std::string output;
+        #ifdef _WIN32
+        std::print("Create a .csv report file at the end of the analysis [y/n]? ");
+        std::cin >> output;
+        output = (output == "y") ? "csv" : "";
+        #else
+        if (vm.count("output"))
+            output = vm["output"].as<std::string>();
+        #endif
         AnalyzerApp trafficAnalyzer;
         trafficAnalyzer.start(intf, limitPackets, filters, output);
     }

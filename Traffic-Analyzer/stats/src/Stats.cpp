@@ -1,5 +1,8 @@
 #include "Stats.h"
 
+#include <filesystem>
+#include <fstream>
+
 Stats::Stats() : lastTick(std::chrono::steady_clock::now()) {}
 
 const char* transportToStr(TransportProtocol transport)
@@ -187,5 +190,38 @@ void Stats::updateTransportStats()
         if (++i == 50)
             break;
     }
+}
+
+void Stats::exportCsv()
+{
+    std::filesystem::path path = "capture_out.csv";
+    std::string outputFile = "capture_out.csv";
+
+    std::filesystem::path absPath = std::filesystem::absolute(path);
+    std::filesystem::path parent = absPath.parent_path().parent_path();
+    parent /= outputFile;
+
+    std::ofstream csvFile(parent);
+
+    if (csvFile.is_open())
+    {
+        csvFile << "Name,Packet,Bytes\n";
+
+        csvFile << "Total," << snapshot.totalPackets << "," << snapshot.totalBytes << "\n";
+
+        for (auto& [t, s] : transportMap)
+            csvFile << transportToStr(t) << "," << s.packets << "," << s.bytes << "\n";
+
+        for (auto& [app, s] : applicationMap)
+            csvFile << appToStr(app) << "," << s.packets << "," << s.bytes << "\n";
+
+        for (auto& [ip, s] : ipMap)
+            csvFile << ip << "," << s.packetsSent << "," << s.bytesSent << "\n";
+    }
+    else
+    {
+        throw std::runtime_error("Unable to create the report file");
+    }
+
 }
 

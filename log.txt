@@ -2,4 +2,6 @@ Gráfico de banda não funcionando
 
 Seções crescendo sem limite e tomando outras partes
 
-Formular relatório: csv, json, pcap
+Formular relatório: csv, json, 
+
+Programa nao encerra corretamente

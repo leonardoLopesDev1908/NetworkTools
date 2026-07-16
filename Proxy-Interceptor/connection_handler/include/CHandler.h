@@ -13,6 +13,21 @@
 
 class CHandler
 {
+    std::atomic<bool>* m_keep = nullptr;
+
+    std::string m_requestBuf;
+    std::string m_responseBuf;
+
+    SocketType m_clientSocket;
+    SocketType m_forwardSocket = INVALID_S;
+
+    std::atomic<bool> receiving = true;
+
+    Intercept& m_intercept;
+    HttpParser m_parser;
+    Queue<std::string>& m_errors;
+    Queue<Message>& m_messages;
+
   public:
     CHandler(SocketType&& connection, Queue<Message>& messages, Queue<std::string>& errors,
              Intercept& intercept, std::atomic<bool>* keepFlag);
@@ -28,22 +43,6 @@ class CHandler
   private:
     std::expected<void, std::string> read();
     std::expected<void, std::string> remoteSocket(const std::string& host, const std::string& port);
-
-  private:
-    std::atomic<bool>* m_keep = nullptr;
-
-    std::string m_requestBuf;
-    std::string m_responseBuf;
-
-    SocketType m_clientSocket;
-    SocketType m_forwardSocket = INVALID_S;
-
-    std::atomic<bool> receiving = true;
-
-    Intercept& m_intercept;
-    HttpParser m_parser;
-    Queue<std::string>& m_errors;
-    Queue<Message>& m_messages;
 };
 
 #endif

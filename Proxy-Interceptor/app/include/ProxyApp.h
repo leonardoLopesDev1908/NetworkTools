@@ -14,56 +14,42 @@
 #include <thread>
 
 
+enum class Language {English, Portuguese, Spanish};
+
+struct MessagesMenuState
+{
+    std::vector<std::string> m_messageEntries;
+    int selectedMessage = 0;
+};
+    
+struct EditState
+{
+    std::string method;
+    std::string path;
+    std::string body;
+    ftxui::Component inputMethod;
+    ftxui::Component inputPath;
+    ftxui::Component inputBody;
+};
+
+struct OptionsState
+{
+    std::vector<std::string> languages = { 
+        "English", "Portuguese", "Spanish" 
+    };
+    int selectedLanguage = 0;
+    bool keepMessagesFlag = false;
+};
+
+struct InputEndpointState 
+{
+    std::string host;
+    std::string port;
+};
+
+
 class ProxyApp 
 {
-public:    
-    ~ProxyApp();
-    void start();
-    ftxui::Element manual_page();
-    ftxui::Element input_endpoint_page();
-    ftxui::Element messages_menu_page();
-    ftxui::Element options_page();
-
-    void printHelp();
-
-private:
-    ftxui::Element edit_messages_menu();
-    ftxui::Element show_messages_menu(std::deque<Message> messages);
-
-    enum class Language {English, Portuguese, Spanish};
-
-    struct MessagesMenuState
-    {
-        std::vector<std::string> m_messageEntries;
-        int selectedMessage = 0;
-    };
-    
-    struct EditState
-    {
-        std::string method;
-        std::string path;
-        std::string body;
-        ftxui::Component inputMethod;
-        ftxui::Component inputPath;
-        ftxui::Component inputBody;
-    };
-
-    struct OptionsState
-    {
-        std::vector<std::string> languages = { 
-            "English", "Portuguese", "Spanish" 
-        };
-        int selectedLanguage = 0;
-        bool keepMessagesFlag = false;
-    };
-
-    struct InputEndpointState 
-    {
-        std::string host;
-        std::string port;
-    };
-
-private:
     int selected = 0;
     int activeTab = 0;
     std::string m_submitError;
@@ -95,4 +81,18 @@ private:
 
     std::shared_ptr<Proxy> m_proxy;
     std::thread proxyThread;
+
+public:    
+    ~ProxyApp();
+    void start();
+    ftxui::Element manual_page();
+    ftxui::Element input_endpoint_page();
+    ftxui::Element messages_menu_page();
+    ftxui::Element options_page();
+
+    void printHelp();
+
+private:
+    ftxui::Element edit_messages_menu();
+    ftxui::Element show_messages_menu(std::deque<Message> messages);
 };

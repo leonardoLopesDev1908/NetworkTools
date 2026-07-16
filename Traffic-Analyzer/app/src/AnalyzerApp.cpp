@@ -2,10 +2,12 @@
 #include <ftxui/screen/screen.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 
+#include <fstream>
+
 using namespace ftxui;
 
 void AnalyzerApp::start(const std::string& intf, int limitPackets, 
-					std::vector<std::string>& filters)
+					std::vector<std::string>& filters, const std::string& output)
 {
     std::string filterExp = "";
 	if (!filters.empty())
@@ -15,7 +17,7 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
             filterExp += s + " ";
         }
 	}
-    
+
     std::atomic<bool> captureFinished = false;
     std::atomic<bool> tuiRunning = true;
 
@@ -68,7 +70,7 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
                 stats.updatePairs();
                 stats.updateTransportStats();
 
-                ftxui::Element newFrame = view.render(stats.getSnaphot(), intf, filterExp, 
+                ftxui::Element newFrame = view.render(stats.getSnapshot(), intf, filterExp, 
                                            captureFinished, timer.load());
 
                 {
@@ -93,8 +95,43 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
 
     captureFinished = false;
 
+    if(!output.empty())
+    {
+        if(output == "csv") exportCsv();
+        //else if(output == "json") exportJson();
+        //
+    }
+
     if (appThread.joinable())
         appThread.join();
+}
+
+void AnalyzerApp::exportCsv()
+{
+    std::ofstream csvFile("capture_output.csv");
+        
+    csvFile << "Name,Packet,Bytes\n";
+    
+    auto snapshot = stats.getSnapshot();
+
+    csvFile << "Total,"
+            << snapshot.totalPackets << ","
+            << snapshot.totalBytes << "\n";
+
+    for(auto& [t, s] : snapshot.transportMap)
+        csvFile << t << "," 
+                << s.packets << ","
+                << s.bytes << "\n";
+
+    for(auto& [app, s] : snapshot.applicationMap)
+        csvFile << app << ","
+                << s.packets << ","
+                << s.bytes << "\n";
+        
+    for(auto& [ip, s] : snapshot.ipMap)
+        csvFile << ip << ","
+                << s.packetsSent << ","
+                << s.bytesSent << "\n";
 }
 
 void AnalyzerApp::printHelp()

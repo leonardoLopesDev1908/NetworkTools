@@ -1,6 +1,7 @@
 #include "AnalyzerApp.h"
 #include "Initialization.h"
 #include "ProxyApp.h"
+
 #include <boost/program_options.hpp>
 #include <expected>
 
@@ -28,7 +29,10 @@ int main(int argc, char** argv)
             "  proto:<name>   tcp | udp | icmp | dns\n"
             "  src:<ip>       Source IP address\n"
             "  dst:<ip>       Destination IP address\n"
-            "  port:<number>  Source or destination port");
+            "  port:<number>  Source or destination port")
+
+        ("output,o", po::value<std::string>()->default_value(""),
+            "Capture's capture (.csv, .json)");
 
     po::positional_options_description p;
     p.add("tools", 1);
@@ -70,7 +74,7 @@ int main(int argc, char** argv)
             filters = vm["filters"].as <std::vector<std::string>>();
 
         AnalyzerApp trafficAnalyzer;
-        trafficAnalyzer.start(intf, limitPackets, filters);
+        trafficAnalyzer.start(intf, limitPackets, filters, output);
     }
 
     platformCleanup();

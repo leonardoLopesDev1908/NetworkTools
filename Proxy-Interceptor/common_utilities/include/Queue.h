@@ -11,7 +11,15 @@
 
 template <typename T> class Queue
 {
-  public:
+    ftxui::ScreenInteractive* m_screen = nullptr;
+
+    std::deque<T> m_items;
+
+    std::condition_variable m_queueCond;
+    std::mutex m_queueMutex;
+    std::mutex m_screenMutex;
+
+public:
     void tryPush(T&& t)
     {
         {
@@ -50,15 +58,6 @@ template <typename T> class Queue
     void setScreen(ftxui::ScreenInteractive* screen) { m_screen = screen; }
 
     std::deque<T> snapshot() { return m_items; }
-
-  private:
-    ftxui::ScreenInteractive* m_screen = nullptr;
-
-    std::deque<T> m_items;
-
-    std::condition_variable m_queueCond;
-    std::mutex m_queueMutex;
-    std::mutex m_screenMutex;
 };
 
 #endif

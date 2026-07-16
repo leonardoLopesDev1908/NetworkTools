@@ -80,7 +80,7 @@ public:
 
     void addPacket(const Packet& packet);
 
-    StatsSnapshot getSnaphot() 
+    StatsSnapshot getSnapshot() 
     { 
         std::scoped_lock<std::mutex> lck(mtx);
         return snapshot; 

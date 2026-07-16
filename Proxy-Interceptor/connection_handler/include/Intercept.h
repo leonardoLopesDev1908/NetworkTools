@@ -10,6 +10,15 @@
 
 class Intercept
 {
+    ftxui::ScreenInteractive* m_screen = nullptr;
+
+    bool m_cancelled = false;
+    bool m_resolved = false;
+    Message m_edited;
+
+    std::mutex m_mutex;
+    std::condition_variable m_cond;
+
   public:
     Message m_pending;
 
@@ -19,16 +28,6 @@ class Intercept
     Message* pending();
     void cancel();
     void setScreen(ftxui::ScreenInteractive* screen);
-
-  private:
-    ftxui::ScreenInteractive* m_screen = nullptr;
-
-    bool m_cancelled = false;
-    bool m_resolved = false;
-    Message m_edited;
-
-    std::mutex m_mutex;
-    std::condition_variable m_cond;
 };
 
 #endif

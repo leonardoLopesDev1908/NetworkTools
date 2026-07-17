@@ -57,6 +57,8 @@ struct StatsSnapshot
 class Stats
 {
     std::mutex mtx;
+    
+    uint32_t lastByte= 0;
     std::chrono::steady_clock::time_point lastTick;
         
     std::unordered_map<TransportProtocol, protocolStats> transportMap;
@@ -88,6 +90,9 @@ public:
 
     void updateAppStats();
     void updateBandwidth();
+    double smooth_bandwidth = 0.0;
+
+
     void updateIpStats();
     void updatePackets();
     void updatePairs();

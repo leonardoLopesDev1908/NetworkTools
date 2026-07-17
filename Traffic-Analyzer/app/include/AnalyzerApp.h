@@ -17,7 +17,7 @@ class AnalyzerApp
 
 public:
 
-	void start(const std::string& intf, int limitPackets, 
+	void start(std::string& intf, int limitPackets, 
 			std::vector<std::string>& filters, const std::string& output);
 	void printHelp();
 };

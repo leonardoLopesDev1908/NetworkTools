@@ -40,16 +40,15 @@ class Capture
 private:
 
     void dataLink(int type);
-    void stop();
 
 public:
     
     ~Capture();
 
     void initialize();
+    void config(const std::string& device, int limit, Stats* stats, const std::string& filterExp);
     void start();
-    void config(const std::string& device, int limit, Stats* stats,
-                         const std::string& filterExp);
+    void stop();
 
     static void callback(uint8_t* user, const struct pcap_pkthdr *pkthdr, 
               const uint8_t* packetd_ptr);
@@ -58,8 +57,7 @@ public:
     
     bool isRunning() { return running; }
     void setRunning(bool flag) { running = flag; }
-   
-    void printInterfaces();
+    std::string getDevice() const { return device; }
 };
 
 

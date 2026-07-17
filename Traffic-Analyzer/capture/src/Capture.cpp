@@ -21,6 +21,7 @@ static uint16_t getEtherByFamily(const uint32_t type)
 void Capture::stop() 
 {
     running = false;
+    pcap_breakloop(handle.get());
     if (thread.joinable())
         thread.join();
 }
@@ -148,7 +149,7 @@ void Capture::start()
     for (devicePtr = interfaces, i = 0; i < input - 1; i++, devicePtr = devicePtr->next)
         ;
 
-    device = devicePtr->name;
+    device = devicePtr->description;
     handle.reset(pcap_open_live(devicePtr->name, BUFSIZ, 1, 100, errBuf));
 
 #else
@@ -174,12 +175,15 @@ void Capture::start()
             std::print("Error: pcap_setfilter() %s", pcap_geterr(handle.get()));
     }
 
-    thread = std::thread([&](){
-        if (pcap_loop(handle.get(), packetsLimit, callback, reinterpret_cast<uint8_t*>(this)))
+    thread = std::thread(
+        [&]() {
+        int ret = pcap_loop(handle.get(), packetsLimit, callback, reinterpret_cast<uint8_t*>(this));
+        if(ret == -1)
         {
             std::print("Error: pcap_loop() faile\n");
             exit(1);
         }
+        else if (ret == -2) std::print("Capture finished\n");
     });
 }
 
@@ -190,9 +194,4 @@ void Capture::config(const std::string& device, int limit, Stats* stats, const s
     this->filterExp = filterExp;
 
     packetsLimit = limit;
-}
-
-void Capture::printInterfaces()
-{
-
 }

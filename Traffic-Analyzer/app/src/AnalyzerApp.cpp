@@ -4,7 +4,7 @@
 
 using namespace ftxui;
 
-void AnalyzerApp::start(const std::string& intf, int limitPackets, 
+void AnalyzerApp::start(std::string& intf, int limitPackets, 
 					std::vector<std::string>& filters, const std::string& output)
 {
     std::string filterExp = "";
@@ -22,6 +22,10 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
 	capture.config(intf, limitPackets, &stats, filterExp);
     capture.initialize();
 	capture.start();
+    
+    #ifdef _WIN32
+    intf = capture.getDevice();
+    #endif
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     std::atomic<std::chrono::seconds> timer;
@@ -91,7 +95,7 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
 
     screen.Loop(component);
 
-    captureFinished = false;
+    captureFinished = true;
 
     if(!output.empty())
     {
@@ -99,6 +103,8 @@ void AnalyzerApp::start(const std::string& intf, int limitPackets,
         //else if(output == "json") exportJson();
         //
     }
+
+    capture.stop();
 
     if (appThread.joinable())
         appThread.join();

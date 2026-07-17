@@ -33,7 +33,7 @@ int main(int argc, char** argv)
             "  port:<number>  Source or destination port")
 
         ("output,o", po::value<std::string>()->default_value(""),
-            "Capture's capture (.csv, .json)");
+            "Capture's capture (csv, json)");
 
     po::positional_options_description p;
     p.add("tools", 1);
@@ -74,15 +74,10 @@ int main(int argc, char** argv)
         if (vm.count("filters"))
             filters = vm["filters"].as <std::vector<std::string>>();
 
-        std::string output;
-        #ifdef _WIN32
-        std::print("Create a .csv report file at the end of the analysis [y/n]? ");
-        std::cin >> output;
-        output = (output == "y") ? "csv" : "";
-        #else
+        std::string output{};
         if (vm.count("output"))
             output = vm["output"].as<std::string>();
-        #endif
+ 
         AnalyzerApp trafficAnalyzer;
         trafficAnalyzer.start(intf, limitPackets, filters, output);
     }

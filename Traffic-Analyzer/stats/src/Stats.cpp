@@ -94,25 +94,30 @@ void Stats::updateAppStats()
     }
 }
 
-void Stats::updateBandwidth() 
-{ 
-    std::scoped_lock<std::mutex> lck(mtx);
+void Stats::updateBandwidth()
+{
+    std::lock_guard<std::mutex> lock(mtx);
+    using namespace std::chrono;
 
-    auto now = std::chrono::steady_clock::now();
-    auto timestamp = now - lastTick;
+    auto now = steady_clock::now();
+    double ts = duration_cast<duration<double>>(now.time_since_epoch()).count();
+    double elapsed = duration_cast<duration<double>>(now - lastTick).count();
 
-    BandwidthPoint bd{};
-    bd.timestamp = timestamp.count();
-    bd.bytesPerSecond = snapshot.currentBytes / timestamp.count();
+    if (elapsed >= 1.0)
+    {
 
-    snapshot.bandwidthHistory.emplace_back(bd);
-    snapshot.bandwidth = ((double)snapshot.currentBytes * 8) / timestamp.count();
+        uint32_t delta_bytes = snapshot.totalBytes - lastByte;
 
-    if (snapshot.bandwidth > snapshot.maxBandwidth)
-        snapshot.maxBandwidth = snapshot.bandwidth;
+        snapshot.bandwidth = delta_bytes / elapsed; 
 
-    lastTick = std::chrono::steady_clock::now();
-    snapshot.currentBytes = 0;
+        lastByte = snapshot.totalBytes;
+        lastTick = now;
+        const double alpha = 0.2;
+        smooth_bandwidth = alpha * snapshot.bandwidth + (1.0 - alpha) * smooth_bandwidth;
+
+        snapshot.bandwidthHistory.push_back({ts, smooth_bandwidth});
+    }
+    snapshot.maxBandwidth= std::max(snapshot.maxBandwidth, snapshot.bandwidth);
 }
 
 void Stats::updateIpStats()
@@ -194,14 +199,10 @@ void Stats::updateTransportStats()
 
 void Stats::exportCsv()
 {
-    std::filesystem::path path = "capture_out.csv";
-    std::string outputFile = "capture_out.csv";
+    std::filesystem::path path = std::filesystem::current_path();
+    std::filesystem::path outputFile = path / "capture_out.csv";
 
-    std::filesystem::path absPath = std::filesystem::absolute(path);
-    std::filesystem::path parent = absPath.parent_path().parent_path();
-    parent /= outputFile;
-
-    std::ofstream csvFile(parent);
+    std::ofstream csvFile(outputFile);
 
     if (csvFile.is_open())
     {
@@ -217,11 +218,12 @@ void Stats::exportCsv()
 
         for (auto& [ip, s] : ipMap)
             csvFile << ip << "," << s.packetsSent << "," << s.bytesSent << "\n";
+
+        printf("report created\n");
     }
     else
     {
         throw std::runtime_error("Unable to create the report file");
     }
-
 }
 

@@ -1,12 +1,14 @@
 #ifndef PROTOCOL_STATS_H
 #define PROTOCOL_STATS_H
 
+#include "Alerts.h"
 #include "Packet.h"
 
 #include <chrono>
 #include <map>
 #include <mutex>
 #include <queue>
+#include <set>
 #include <unordered_map>
 
 struct BandwidthPoint
@@ -22,6 +24,9 @@ struct IPStats
 
     uint32_t packetsReceived = 0;
     uint32_t packetsSent = 0;
+
+    std::set<uint16_t> portsContacted;
+    std::chrono::steady_clock::time_point timestamp;
 };
 
 struct protocolStats
@@ -44,6 +49,8 @@ struct StatsSnapshot
     std::vector<std::vector<std::string>> pairRows;
     std::vector<std::vector<std::string>> packetRows;
         
+    std::vector<Alert> alerts;
+
     uint32_t currentBytes = 0;
     uint32_t totalBytes = 0;
     uint32_t totalPackets = 0;
@@ -70,6 +77,9 @@ class Stats
     std::deque<Packet> packets;
     
     StatsSnapshot snapshot;
+
+private:
+    void verifyAnomaly(const std::string& ipSrc);
 
 public:
     Stats();

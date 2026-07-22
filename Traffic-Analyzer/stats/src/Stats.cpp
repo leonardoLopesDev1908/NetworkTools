@@ -62,15 +62,26 @@ void Stats::addPacket(const Packet& packet)
 	ipMap[packet.source].bytesSent += packet.totalLen;
     ipMap[packet.source].packetsSent++;
 
-	ipMap[packet.destiny].bytesReceived += packet.totalLen;
+    auto now = std::chrono::steady_clock::now();
+    if (now - ipMap[packet.source].timestamp > std::chrono::seconds(10))
+    {
+        ipMap[packet.source].portsContacted.clear();
+        ipMap[packet.source].timestamp = std::chrono::steady_clock::now();
+    }
+    else
+        ipMap[packet.source].portsContacted.emplace(packet.dstPort);
+
+    ipMap[packet.destiny].bytesReceived += packet.totalLen;
     ipMap[packet.destiny].packetsReceived++;
-	
+
 	snapshot.totalBytes += packet.totalLen;
     snapshot.currentBytes += packet.totalLen; 
     snapshot.totalPackets++;
 
 	pairs[{packet.source, packet.destiny}].bytes += packet.totalLen;
 	pairs[{packet.source, packet.destiny}].packets++;
+
+    verifyAnomaly(packet.source);
 }
 
 void Stats::updateAppStats() 
@@ -194,6 +205,14 @@ void Stats::updateTransportStats()
 
         if (++i == 50)
             break;
+    }
+}
+
+void Stats::verifyAnomaly(const std::string& ipSrc)
+{ 
+    if (ipMap[ipSrc].portsContacted.size() >= 15)
+    {
+        snapshot.alerts.emplace_back(AnomalyType::PortScan, Risk::Medium, ipSrc, "Port scan");
     }
 }
 

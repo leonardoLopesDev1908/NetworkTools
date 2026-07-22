@@ -1,3 +1,4 @@
+add_subdirectory(alerts)
 add_subdirectory(app)
 add_subdirectory(tui)
 add_subdirectory(capture)

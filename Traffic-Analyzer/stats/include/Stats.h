@@ -109,6 +109,7 @@ public:
     void updateTransportStats();
 
     void exportCsv();
+    void exportJson();
 };
 
 #endif

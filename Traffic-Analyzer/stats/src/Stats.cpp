@@ -237,12 +237,59 @@ void Stats::exportCsv()
 
         for (auto& [ip, s] : ipMap)
             csvFile << ip << "," << s.packetsSent << "," << s.bytesSent << "\n";
-
-        printf("report created\n");
     }
     else
     {
-        throw std::runtime_error("Unable to create the report file");
+        throw std::runtime_error("Unable to create the report file.");
     }
 }
 
+void Stats::exportJson() 
+{ 
+    std::filesystem::path path = std::filesystem::current_path(); 
+    std::filesystem::path outputFile = path / "capture_out.json";
+
+    std::ofstream jsonFile(outputFile);
+
+    if (jsonFile.is_open())
+    {
+        jsonFile << "{\n ";
+
+        jsonFile << "\ttotal_packet: " << snapshot.totalPackets << "\n"; 
+        jsonFile << "\ttotal_bytes: " << snapshot.totalBytes << "\n ";
+
+        jsonFile << "\ttransport_stats:\n\t{\n";
+
+        for (auto& [t, s] : transportMap)
+        {
+            jsonFile << "\t\t" << transportToStr(t) << ":\n\t\t{\n";
+            jsonFile << "\t\t\tpackets: " << s.packets << "\n";
+            jsonFile << "\t\t\tbytes: " << s.bytes << "\n\t\t}\n";
+        }
+        jsonFile << "\t}\n";
+
+        jsonFile << "\tapplication_stats:\n\t{\n";
+
+        for (auto& [app, s] : applicationMap)
+        {
+            jsonFile << "\t\t" << appToStr(app) << ":\n\t\t{\n";
+            jsonFile << "\t\t\tpackets: " << s.packets << "\n";
+            jsonFile << "\t\t\tbytes: " << s.bytes << "\n\t\t}\n";
+        }
+        jsonFile << "\t}\n";
+
+        jsonFile << "\tip_stats:\n\t{\n";
+
+        for (auto& [ip, s] : ipMap)
+        {
+            jsonFile << "\t\t" << ip << ":\n\t\t{\n";
+            jsonFile << "\t\t\tpackets_sent: " << s.packetsSent<< "\n";
+            jsonFile << "\t\t\tbytes_sent: " << s.bytesReceived<< "\n\t\t}\n";
+        }
+        jsonFile << "\t}\n}";
+    } 
+    else
+    {
+        throw std::runtime_error("Unable to create report file.");
+    }
+}

@@ -32,7 +32,7 @@ int main(int argc, char** argv)
             "  dst:<ip>       Destination IP address\n"
             "  port:<number>  Source or destination port")
 
-        ("output,o", po::value<std::string>()->default_value(""),
+        ("output,o", po::value<std::string>()->default_value("json"),
             "Capture's capture (csv, json)");
 
     po::positional_options_description p;

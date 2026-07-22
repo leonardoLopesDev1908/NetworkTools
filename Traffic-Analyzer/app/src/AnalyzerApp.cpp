@@ -100,8 +100,7 @@ void AnalyzerApp::start(std::string& intf, int limitPackets,
     if(!output.empty())
     {
         if(output == "csv") stats.exportCsv();
-        //else if(output == "json") exportJson();
-        //
+        else if(output == "json") stats.exportJson();
     }
 
     capture.stop();

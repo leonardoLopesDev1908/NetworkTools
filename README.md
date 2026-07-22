@@ -1,4 +1,3 @@
-<img width="1881" height="812" alt="Captura de tela 2026-07-22 094148" src="https://github.com/user-attachments/assets/27916ebf-4c8f-4a68-aba4-ef790b0435d4" />
 # NetworkTools
 
 **NetworkTools** is a project with the goal to be a practical study of network security. It has two main tools to be used
